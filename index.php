@@ -18,6 +18,8 @@
  class CustomerIOAdmin {
   function __construct() {
      add_action( 'admin_menu', [$this,'add_settings_page'] );
+     add_action( 'admin_init', [$this, 'init_admin']);
+     add_action('wp_ajax_save_customerio_settings', [$this, 'save_settings']);
   }
 
   function add_settings_page() {
@@ -27,8 +29,31 @@
   function show_settings_page() {
     include_once("settings.php");
   }
+
+  function init_admin() {
+    wp_enqueue_script("customerio_js", plugin_dir_url(__FILE__)."/customer.js",["wpjsutils"]);
+		wp_localize_script('customerio_js',
+		'customerIOData', [
+			'ajax_url' => admin_url('admin-ajax.php'),
+			'nonce' => wp_create_nonce('afm-nonce'),
+		]);
+  }
+
+  function save_settings() {
+    try {
+      CustomerIO::saveSettings($_POST["enabled"] == "true",$_POST["apiKey"],$_POST["siteId"],$_POST["broadcastKey"],$_POST["region"]);
+
+      echo json_encode([]);
+      die;
+    } catch(Exception $ex){
+      echo json_encode(["error"=>true,"message" => $ex->getMessage()]);
+      die;
+    }
+  }
 }
 
- $customerioAdmin = new CustomerIOAdmin();
+include_once "customer.php";
+ 
+$customerioAdmin = new CustomerIOAdmin();
 
 ?>

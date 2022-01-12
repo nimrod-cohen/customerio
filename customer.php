@@ -4,16 +4,12 @@ class CustomerIO {
   private $apiKey = "";
   private $siteId = "";
   private $broadcastKey = "";
+  private $region = "us";
   
-  const CUSTOMERIO_TRACK_API_URL = "https://track-eu.customer.io/api/v1";
-  const CUSTOMERIO_CAMPAIGN_API_URL = "https://api-eu.customer.io/v1";
-  const CUSTOMERIO_AUTH_URL = "https://track-eu.customer.io/auth";
-  const CUSTOMERIO_SETTINGS = "billing_customerio_settings";
-
-  const CIO_BROADCAST_POST_UPDATE = 7;
-  const CIO_BROADCAST_COMMUNICATE_USER = 8;
-  const CIO_PAYING_USERS_SEGMENT = 18;
-  const CIO_ADMINS_SEGMENT = 34;
+  const CUSTOMERIO_TRACK_API_URL = "https://track.customer.io/api/v1";
+  const CUSTOMERIO_CAMPAIGN_API_URL = "https://api.customer.io/v1";
+  const CUSTOMERIO_AUTH_URL = "https://track.customer.io/auth";
+  const CUSTOMERIO_SETTINGS = "customerio_settings";
 
   function __construct()
   {
@@ -26,7 +22,8 @@ class CustomerIO {
     $this->enabled = $data["enabled"];
     $this->apiKey = $data["apikey"];
     $this->siteId = $data["siteid"];
-    $this->broadcastKey = empty($data["broadcastKey"]) ? "" : $data["broadcastKey"];
+    $this->region = isset($data["region"]) ? $data["region"] : 'us';
+    $this->broadcastKey = empty($data["broadcastkey"]) ? "" : $data["broadcastkey"];
   }
 
   function isEnabled() {
@@ -45,14 +42,24 @@ class CustomerIO {
     return $this->siteId;
   }
 
-  static function saveSettings($enabled, $apiKey, $siteId, $broadcastKey) {
-    $data = ["enabled" => $enabled, "siteid" => $siteId, "apikey" => $apiKey, "broadcastKey" => $broadcastKey];
+  function getRegion() {
+    return $this->region;
+  }
+
+  function addRegion($url) {
+    if($this->region != "us") 
+      $url = preg_replace("/^([^\.]*)(.*$)/","$1-".$this->region."$2",$url);
+    return $url;
+  }
+
+  static function saveSettings($enabled, $apiKey, $siteId, $broadcastKey, $region) {
+    $data = ["enabled" => $enabled, "siteid" => $siteId, "apikey" => $apiKey, "broadcastkey" => $broadcastKey, "region" => $region];
     update_option(self::CUSTOMERIO_SETTINGS,json_encode($data,JSON_UNESCAPED_SLASHES));
   }
 
   function testAuth()  {
     $auth = base64_encode($this->siteId.":".$this->apiKey);
-    return file_get_contents(self::CUSTOMERIO_AUTH_URL,false,stream_context_create([
+    return file_get_contents($this->addRegion(self::CUSTOMERIO_AUTH_URL),false,stream_context_create([
       'http' => [
         'method' => 'GET',
         'header' => 'Authorization: Basic '.$auth,
@@ -61,7 +68,7 @@ class CustomerIO {
   }
 
   private function sendTrackRequest($endpoint, $data, $method = 'PUT') {
-    $url = self::CUSTOMERIO_TRACK_API_URL.$endpoint;
+    $url = $this->addRegion(self::CUSTOMERIO_TRACK_API_URL).$endpoint;
     return $this->sendRequest($url, $data, $method);
   }
 
@@ -95,8 +102,10 @@ class CustomerIO {
     return true;
   }
 
+  //this function receives a segment and/or a list of email recepients, and sends a transaction broadcast to them.
   //recipients, if provided, should be an array of emails
-  function sendBroadcast($broadcastId, $params, $recipients = [], $segment = null) {
+  //the andOr operator determines if we should send only to emails in segment or to all emails AND all segment customers (unification vs slicing)
+  function sendBroadcast($broadcastId, $params, $recipients = [], $segment = null, $andOr = "and") {
     if(!$this->enabled) return false; 
 
     if(wp_get_environment_type() != "production" && isset($params["subject"])) {
@@ -105,18 +114,19 @@ class CustomerIO {
 
     $data = ["data" => $params];
 
-    $recips = [];
+    $recips = [$andOr => []];
 
     if($segment != null) {
-      $recips = ["and" => [[
+      $recips[$andOr][] = [
         "segment" => [
           "id" => $segment
         ]
-      ]]];
-    } else if(count($recipients) > 0) {
-      $recips = ["or" => []];
+      ];
+    } 
+    if(count($recipients) > 0) {
+      $arr = ["or" => []];
       foreach($recipients as $recipient) {
-        $recips["or"][] = [
+        $arr["or"][] = [
           "attribute" => [
             "field" => "email",
             "operator" => "eq",
@@ -124,10 +134,12 @@ class CustomerIO {
           ]
         ];
       }
+      $recips[$andOr][] = $arr;
     }
+    
     $data["recipients"] = $recips;
 
-    $url = self::CUSTOMERIO_CAMPAIGN_API_URL."/campaigns/".$broadcastId."/triggers";
+    $url = $this->addRegion(self::CUSTOMERIO_CAMPAIGN_API_URL)."/campaigns/".$broadcastId."/triggers";
 
     try {
       $content = json_encode($data);
