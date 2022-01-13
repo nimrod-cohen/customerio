@@ -4,10 +4,12 @@ class CustomerIO {
   private $apiKey = "";
   private $siteId = "";
   private $broadcastKey = "";
+  private $betaApiAppKey = "";
   private $region = "us";
   
   const CUSTOMERIO_TRACK_API_URL = "https://track.customer.io/api/v1";
   const CUSTOMERIO_CAMPAIGN_API_URL = "https://api.customer.io/v1";
+  const CUSTOMERIO_BETA_API_URL = "https://beta-api.customer.io/v1/api"; /* beta api capabilities require different authentication method */
   const CUSTOMERIO_AUTH_URL = "https://track.customer.io/auth";
   const CUSTOMERIO_SETTINGS = "customerio_settings";
 
@@ -22,8 +24,9 @@ class CustomerIO {
     $this->enabled = $data["enabled"];
     $this->apiKey = $data["apikey"];
     $this->siteId = $data["siteid"];
-    $this->region = isset($data["region"]) ? $data["region"] : 'us';
-    $this->broadcastKey = empty($data["broadcastkey"]) ? "" : $data["broadcastkey"];
+    $this->region = !empty($data["region"]) ? $data["region"] : 'us';
+    $this->betaApiAppKey = !empty($data["betaapiappkey"]) ? $data["betaapiappkey"] : '';
+    $this->broadcastKey = !empty($data["broadcastkey"]) ?$data["broadcastkey"] : '';
   }
 
   function isEnabled() {
@@ -46,14 +49,25 @@ class CustomerIO {
     return $this->region;
   }
 
+  function getBetaApiAppKey() {
+    return $this->betaApiAppKey;
+  }
+
   function addRegion($url) {
     if($this->region != "us") 
       $url = preg_replace("/^([^\.]*)(.*$)/","$1-".$this->region."$2",$url);
     return $url;
   }
 
-  static function saveSettings($enabled, $apiKey, $siteId, $broadcastKey, $region) {
-    $data = ["enabled" => $enabled, "siteid" => $siteId, "apikey" => $apiKey, "broadcastkey" => $broadcastKey, "region" => $region];
+  static function saveSettings($enabled, $apiKey, $siteId, $broadcastKey, $betaApiAppKey, $region) {
+    $data = [
+      "enabled" => $enabled,
+      "siteid" => $siteId,
+      "apikey" => $apiKey,
+      "broadcastkey" => $broadcastKey,
+      "betaapiappkey" => $betaApiAppKey,
+      "region" => $region
+    ];
     update_option(self::CUSTOMERIO_SETTINGS,json_encode($data,JSON_UNESCAPED_SLASHES));
   }
 
@@ -70,6 +84,54 @@ class CustomerIO {
   private function sendTrackRequest($endpoint, $data, $method = 'PUT') {
     $url = $this->addRegion(self::CUSTOMERIO_TRACK_API_URL).$endpoint;
     return $this->sendRequest($url, $data, $method);
+  }
+
+  function customerExists($email) {
+    try {
+      //check if customer already exists, and unset aff data.
+      $existing = $this->sendBetaRequest("/customers?email=".$email, [], 'GET', true);
+
+      $existing = json_decode($existing, true);
+
+      return $existing && !empty($existing["results"]) && count($existing["results"]) > 0;
+
+    } catch(Exception $ex) {
+      return false;
+    }
+  }
+
+  private function sendBetaRequest($endpoint, $data, $method = 'PUT') {
+    if(!$this->enabled) return false; 
+
+    try {
+      $auth = $this->betaApiAppKey;
+      $content = json_encode($data);
+      $url = $this->addRegion(self::CUSTOMERIO_BETA_API_URL).$endpoint;
+
+      $conn = curl_init($url);
+      if($method != 'GET')
+        curl_setopt($conn, CURLOPT_POSTFIELDS, $content);
+      curl_setopt($conn, CURLOPT_RETURNTRANSFER, true);
+      curl_setopt($conn, CURLOPT_CUSTOMREQUEST, $method);
+      curl_setopt($conn, CURLOPT_HTTPHEADER, [
+        'Authorization: Bearer '.$auth,
+        'content-type: application/json'
+      ]);
+
+      $result = curl_exec($conn);
+      $code = curl_getinfo($conn, CURLINFO_RESPONSE_CODE);
+
+      curl_close($conn);
+
+      if($code >= 300 || !$result || preg_match("/DOCTYPE html/i",$result)) throw new Exception("Failed to call customer.io");
+
+    } catch(Exception $ex) {
+      //log error
+      $err = $ex->getMessage();
+
+      return false;
+    }
+    return $result;
   }
 
   private function sendRequest($url, $data, $method = 'PUT') {
@@ -89,9 +151,11 @@ class CustomerIO {
       ]);
 
       $result = curl_exec($conn);
+      $code = curl_getinfo($conn, CURLINFO_RESPONSE_CODE);
+
       curl_close($conn);
 
-      if(!$result || preg_match("/DOCTYPE html/i",$result)) throw new Exception("Failed to call customer.io");
+      if($code >= 300 || !$result || preg_match("/DOCTYPE html/i",$result)) throw new Exception("Failed to call customer.io");
 
     } catch(Exception $ex) {
       //log error

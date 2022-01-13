@@ -6,7 +6,7 @@
  * Plugin Name:       CustomerIO integration
  * Plugin URI:        http://wordpress.org/plugins/customerio
  * Description:       Integrate Wordpress with Customer IO
- * Version:           1.0.0
+ * Version:           1.1.2
  * Author:            Nimrod Cohen
  * Author URI:        https://google.com?q=who+is+the+dude
  * License:           GPL-2.0+
@@ -20,6 +20,22 @@
      add_action( 'admin_menu', [$this,'add_settings_page'] );
      add_action( 'admin_init', [$this, 'init_admin']);
      add_action('wp_ajax_save_customerio_settings', [$this, 'save_settings']);
+     add_filter( 'plugin_action_links_customerio/index.php', [$this,'add_settings_link'] );
+  }
+
+  function add_settings_link( $links ) {
+    // Build and escape the URL.
+    $url = esc_url( add_query_arg(
+      'page',
+      'customerio',
+      get_admin_url() . 'options-general.php'
+    ) );
+
+    $settings_link = "<a href='$url'>" . __( 'Settings' ) . '</a>';
+
+    array_push($links, $settings_link);
+
+    return $links;
   }
 
   function add_settings_page() {
@@ -41,7 +57,13 @@
 
   function save_settings() {
     try {
-      CustomerIO::saveSettings($_POST["enabled"] == "true",$_POST["apiKey"],$_POST["siteId"],$_POST["broadcastKey"],$_POST["region"]);
+      CustomerIO::saveSettings(
+        $_POST["enabled"] == "true",
+        $_POST["apiKey"],
+        $_POST["siteId"],
+        $_POST["broadcastKey"],
+        $_POST["betaApiAppKey"],
+        $_POST["region"]);
 
       echo json_encode([]);
       die;

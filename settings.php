@@ -32,6 +32,10 @@
       <th><label for="broadcast_key">Broadcast key</label></th>
       <td> <input name="broadcast_key" id="broadcast_key" type="text" value="<?php echo $customerio->getBroadcastKey() ?>" class="regular-text code"></td>
     </tr>
+    <tr>
+      <th><label for="beta_api_app_key">Beta API app key</label></th>
+      <td> <input name="beta_api_app_key" id="beta_api_app_key" type="text" value="<?php echo $customerio->getBetaApiAppKey() ?>" class="regular-text code"></td>
+    </tr>
   </tbody>
 </table>
 <p class="submit">
