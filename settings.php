@@ -1,8 +1,13 @@
 <?php
-  $customerio = new CustomerIO();
+
+use Forminator\Stripe\Customer;
+
+$customerio = new CustomerIO();
   $region = $customerio->getRegion();
+
 ?>
 <h1>CustomerIO settings</h1>
+<small>Version <?php echo CustomerIOAdmin::get_version(); ?></small>
 <table class="form-table">
   <tbody>
     <tr>
