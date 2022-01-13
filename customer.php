@@ -89,11 +89,35 @@ class CustomerIO {
   function customerExists($email) {
     try {
       //check if customer already exists, and unset aff data.
-      $existing = $this->sendBetaRequest("/customers?email=".$email, [], 'GET', true);
+      $existing = $this->sendBetaRequest("/customers?email=".$email, [], 'GET');
 
       $existing = json_decode($existing, true);
 
       return $existing && !empty($existing["results"]) && count($existing["results"]) > 0;
+
+    } catch(Exception $ex) {
+      return false;
+    }
+  }
+
+  function getBySegment($segment) {
+    try {
+      //check if customer already exists, and unset aff data.
+      $result = $this->sendBetaRequest("/customers?limit=1000", ["filter" => ["segment" => ["id" => $segment]]], 'POST');
+
+      $result = json_decode($result, true);
+
+      if(!$result) return null;
+
+      $existing = $result["identifiers"];
+
+      while($result["next"]) {
+        $result = $this->sendBetaRequest("/customers?start=".$result["next"]."&limit=200", ["filter" => ["segment" => ["id" => $segment]]], 'POST');
+        $result = json_decode($result, true);
+        $existing = array_merge($existing, $result["identifiers"]);
+      }
+
+      return array_map(function($val) { return $val["email"]; }, $existing);
 
     } catch(Exception $ex) {
       return false;
