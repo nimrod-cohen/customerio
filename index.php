@@ -6,7 +6,7 @@
  * Plugin Name:       CustomerIO integration
  * Plugin URI:        http://wordpress.org/plugins/customerio
  * Description:       Integrate Wordpress with Customer IO
- * Version:           1.1.5
+ * Version:           1.1.6
  * Author:            Nimrod Cohen
  * Author URI:        https://google.com?q=who+is+the+dude
  * License:           GPL-2.0+
@@ -53,7 +53,7 @@
 
   function init_admin($page) {
     if($page !== "settings_page_customerio") return;
-    
+
     wp_enqueue_script("customerio_js", plugin_dir_url(__FILE__)."/customer.js",["wpjsutils"]);
 		wp_localize_script('customerio_js',
 		'customerIOData', [
