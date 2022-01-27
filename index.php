@@ -18,7 +18,7 @@
  class CustomerIOAdmin {
   function __construct() {
      add_action( 'admin_menu', [$this,'add_settings_page'] );
-     add_action( 'admin_init', [$this, 'init_admin']);
+     add_action( 'admin_enqueue_scripts', [$this, 'init_admin']);
      add_action('wp_ajax_save_customerio_settings', [$this, 'save_settings']);
      add_filter( 'plugin_action_links_customerio/index.php', [$this,'add_settings_link'] );
   }
@@ -51,7 +51,9 @@
     include_once("settings.php");
   }
 
-  function init_admin() {
+  function init_admin($page) {
+    if($page !== "settings_page_customerio") return;
+    
     wp_enqueue_script("customerio_js", plugin_dir_url(__FILE__)."/customer.js",["wpjsutils"]);
 		wp_localize_script('customerio_js',
 		'customerIOData', [

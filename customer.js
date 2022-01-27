@@ -1,5 +1,8 @@
 JSUtils.domReady(() => {
-  document.querySelector('#submit_customerio_settings').addEventListener('click', async e => {
+  const submitSettings = document.querySelector('#submit_customerio_settings');
+  if (!submitSettings) return;
+
+  submitSettings.addEventListener('click', async (e) => {
     e.preventDefault();
     try {
       const form = document.querySelector('.form-table');
