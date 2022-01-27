@@ -242,10 +242,12 @@ class CustomerIO {
       ]);
 
       $result = curl_exec($conn);
+      $code = curl_getinfo($conn, CURLINFO_RESPONSE_CODE);
+
       curl_close($conn);
 
-      if(!$result || preg_match("/DOCTYPE html/i",$result)) throw new Exception("Failed to call customer.io");
-
+      if($code >= 300 || !$result || preg_match("/DOCTYPE html/i",$result)) throw new Exception("Failed to call customer.io");
+      
     } catch(Exception $ex) {
       //log error
       $err = $ex->getMessage();
