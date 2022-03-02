@@ -6,7 +6,7 @@
  * Plugin Name:       CustomerIO integration
  * Plugin URI:        http://wordpress.org/plugins/customerio
  * Description:       Integrate Wordpress with Customer IO
- * Version:           2.0.0
+ * Version:           2.0.1
  * Author:            Nimrod Cohen
  * Author URI:        https://google.com?q=who+is+the+dude
  * License:           GPL-2.0+
@@ -22,6 +22,7 @@
      add_action('wp_ajax_save_customerio_settings', [$this, 'save_settings']);
      add_action('wp_ajax_test_customer_email', [$this, 'test_customer_email']);
      add_action('wp_ajax_test_track_auth', [$this, 'test_track_auth']);
+     add_action('wp_ajax_test_broadcast', [$this, 'test_broadcast']);
      add_filter( 'plugin_action_links_customerio/index.php', [$this,'add_settings_link'] );
   }
 
@@ -62,6 +63,18 @@
 			'ajax_url' => admin_url('admin-ajax.php'),
 			'nonce' => wp_create_nonce('afm-nonce'),
 		]);
+  }
+
+  function test_broadcast() {
+    $cio = new CustomerIO();
+    $broadcastId = $_POST["broadcast_id"];
+    $email = $_POST["email"];
+    $result = $cio->sendBroadcast($broadcastId, [
+      "subject" => "CustomerIO plugin test mail",
+      "content" => date("Y-m-d H:i:s")
+    ], [$email]);
+    echo json_encode(['error'=>$result === false, "message" => $result ? 'Message sent successfully': 'Failed to send message']);
+    die;
   }
 
   function test_track_auth() {

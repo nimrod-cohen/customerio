@@ -54,7 +54,11 @@ $customerio = new CustomerIO();
   <tbody>
     <tr>
       <th><label for="customer_email">Customer email exists</label></th>
-      <td><input id="customer_email" type="text" class="regular-text code">&nbsp;<input id="test_customer_exists" type="button" class="button" value="Test"></td>
+      <td><input id="customer_email" type="text" class="regular-text code">&nbsp;<input id="test_customer_exists" type="button" class="button" value="Test" /></td>
+    </tr>
+    <tr>
+      <th><label>Send test broadcast</label></th>
+      <td><input id="broadcast_id" type="text" class="regular-text code">&nbsp;<input id="test_broadcast" type="button" class="button" value="Send test" /></td>
     </tr>
   </tbody>
 </table>

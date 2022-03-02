@@ -40,4 +40,22 @@ JSUtils.domReady(() => {
 
     notifications.show(result.message, result.error ? 'error' : 'success');
   });
+
+  document.querySelector('#test_broadcast')?.addEventListener('click', async e => {
+    let email = document.querySelector('#customer_email').value;
+    let broadcast_id = document.querySelector('#broadcast_id').value;
+
+    if (email.length === 0 || broadcast_id.length === 0) {
+      notifications.show('Please fill email and broadcast id', 'error');
+      return;
+    }
+
+    let result = await JSUtils.fetch(window.customerIOData.ajax_url, {
+      action: 'test_broadcast',
+      email,
+      broadcast_id
+    });
+
+    notifications.show(result.message, result.error ? 'error' : 'success');
+  });
 });

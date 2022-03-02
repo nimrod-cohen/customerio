@@ -139,11 +139,10 @@ class CustomerIO {
     if(!$this->enabled) return false; 
 
     try {
-      $content = json_encode($data);
       $url = $this->addRegion(self::CUSTOMERIO_BETA_API_URL).$endpoint;
 
       $auth = $this->betaApiKey;
-      $result = $this->sendRequest($url,$content,$method,[CURLOPT_HTTPHEADER => [
+      $result = $this->sendRequest($url,$data,$method,[CURLOPT_HTTPHEADER => [
         'Authorization: Bearer '.$auth,
         'content-type: application/json'
       ]]);
@@ -234,8 +233,7 @@ class CustomerIO {
 
     $result = false;
     try {
-      $content = json_encode($data);
-      $result = $this->sendRequest($url,$content,"POST");
+      $result = $this->sendRequest($url, $data, "POST");
     } catch(Exception $ex) {
       //TODO: log error
       $err = $ex->getMessage();
