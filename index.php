@@ -6,7 +6,7 @@
  * Plugin Name:       CustomerIO integration
  * Plugin URI:        http://wordpress.org/plugins/customerio
  * Description:       Integrate Wordpress with Customer IO
- * Version:           1.1.6
+ * Version:           2.0.0
  * Author:            Nimrod Cohen
  * Author URI:        https://google.com?q=who+is+the+dude
  * License:           GPL-2.0+
@@ -20,6 +20,8 @@
      add_action( 'admin_menu', [$this,'add_settings_page'] );
      add_action( 'admin_enqueue_scripts', [$this, 'init_admin']);
      add_action('wp_ajax_save_customerio_settings', [$this, 'save_settings']);
+     add_action('wp_ajax_test_customer_email', [$this, 'test_customer_email']);
+     add_action('wp_ajax_test_track_auth', [$this, 'test_track_auth']);
      add_filter( 'plugin_action_links_customerio/index.php', [$this,'add_settings_link'] );
   }
 
@@ -62,14 +64,42 @@
 		]);
   }
 
+  function test_track_auth() {
+    try {
+      $cio = new CustomerIO();
+      $result = $cio->testAuth();
+      echo json_encode(['error'=>false, "message" => $result ? 'Tracking Authenticated successfully' : 'Could not authenticate Tracking']);
+      die;
+    } catch(Exception $ex){
+      echo json_encode(["error"=>true,"message" => $ex->getMessage()]);
+      die;
+    }
+  }
+
+  function test_customer_email() {
+    try {
+      $email = $_REQUEST["email"];
+
+      if(!filter_var($email, FILTER_VALIDATE_EMAIL)) throw new exception("Email address is not valid");
+
+      $cio = new CustomerIO();
+      $result = $cio->customerExists($email);
+      echo json_encode(['error'=>false, "message" => $result ? 'Customer exists' : 'Customer does not exist']);
+      die;
+    } catch(Exception $ex){
+      echo json_encode(["error"=>true,"message" => $ex->getMessage()]);
+      die;
+    }
+  }
+
   function save_settings() {
     try {
       CustomerIO::saveSettings(
         $_POST["enabled"] == "true",
-        $_POST["apiKey"],
+        $_POST["trackApiKey"],
         $_POST["siteId"],
-        $_POST["broadcastKey"],
-        $_POST["betaApiAppKey"],
+        $_POST["apiKey"],
+        $_POST["betaApiKey"],
         $_POST["region"]);
 
       echo json_encode([]);

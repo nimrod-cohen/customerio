@@ -1,14 +1,14 @@
 <?php 
 class CustomerIO {
   private $enabled = false;
-  private $apiKey = "";
+  private $trackApiKey = "";
   private $siteId = "";
-  private $broadcastKey = "";
-  private $betaApiAppKey = "";
+  private $apiKey = "";
+  private $betaApiKey = "";
   private $region = "us";
   
   const CUSTOMERIO_TRACK_API_URL = "https://track.customer.io/api/v1";
-  const CUSTOMERIO_CAMPAIGN_API_URL = "https://api.customer.io/v1";
+  const CUSTOMERIO_API_URL = "https://api.customer.io/v1";
   const CUSTOMERIO_BETA_API_URL = "https://beta-api.customer.io/v1/api"; /* beta api capabilities require different authentication method */
   const CUSTOMERIO_AUTH_URL = "https://track.customer.io/auth";
   const CUSTOMERIO_SETTINGS = "customerio_settings";
@@ -22,23 +22,23 @@ class CustomerIO {
     if(!$data) return;
 
     $this->enabled = $data["enabled"];
-    $this->apiKey = $data["apikey"];
+    $this->trackApiKey = $data["trackapikey"];
     $this->siteId = $data["siteid"];
     $this->region = !empty($data["region"]) ? $data["region"] : 'us';
-    $this->betaApiAppKey = !empty($data["betaapiappkey"]) ? $data["betaapiappkey"] : '';
-    $this->broadcastKey = !empty($data["broadcastkey"]) ?$data["broadcastkey"] : '';
+    $this->betaApiKey = !empty($data["betaapikey"]) ? $data["betaapikey"] : '';
+    $this->apiKey = !empty($data["apikey"]) ?$data["apikey"] : '';
   }
 
   function isEnabled() {
     return $this->enabled;
   }
 
-  function getApiKey() {
-    return $this->apiKey;
+  function getTrackApiKey() {
+    return $this->trackApiKey;
   }
 
-  function getBroadcastKey() {
-    return $this->broadcastKey;
+  function getApiKey() {
+    return $this->apiKey;
   }
 
   function getSiteId() {
@@ -49,8 +49,8 @@ class CustomerIO {
     return $this->region;
   }
 
-  function getBetaApiAppKey() {
-    return $this->betaApiAppKey;
+  function getBetaApiKey() {
+    return $this->betaApiKey;
   }
 
   function addRegion($url) {
@@ -59,20 +59,20 @@ class CustomerIO {
     return $url;
   }
 
-  static function saveSettings($enabled, $apiKey, $siteId, $broadcastKey, $betaApiAppKey, $region) {
+  static function saveSettings($enabled, $trackApiKey, $siteId, $apiKey, $betaApiKey, $region) {
     $data = [
       "enabled" => $enabled,
       "siteid" => $siteId,
+      "trackapikey" => $trackApiKey,
       "apikey" => $apiKey,
-      "broadcastkey" => $broadcastKey,
-      "betaapiappkey" => $betaApiAppKey,
+      "betaapikey" => $betaApiKey,
       "region" => $region
     ];
     update_option(self::CUSTOMERIO_SETTINGS,json_encode($data,JSON_UNESCAPED_SLASHES));
   }
 
   function testAuth()  {
-    $auth = base64_encode($this->siteId.":".$this->apiKey);
+    $auth = base64_encode($this->siteId.":".$this->trackApiKey);
     return file_get_contents($this->addRegion(self::CUSTOMERIO_AUTH_URL),false,stream_context_create([
       'http' => [
         'method' => 'GET',
@@ -81,15 +81,10 @@ class CustomerIO {
     ]));
   }
 
-  private function sendTrackRequest($endpoint, $data, $method = 'PUT') {
-    $url = $this->addRegion(self::CUSTOMERIO_TRACK_API_URL).$endpoint;
-    return $this->sendRequest($url, $data, $method);
-  }
-
   function customerExists($email) {
     try {
       //check if customer already exists, and unset aff data.
-      $existing = $this->sendBetaRequest("/customers?email=".$email, [], 'GET');
+      $existing = $this->sendAPIRequest("/customers?email=".$email, [], 'GET');
 
       $existing = json_decode($existing, true);
 
@@ -103,7 +98,7 @@ class CustomerIO {
   function getBySegment($segment) {
     try {
       //check if customer already exists, and unset aff data.
-      $result = $this->sendBetaRequest("/customers?limit=1000", ["filter" => ["segment" => ["id" => $segment]]], 'POST');
+      $result = $this->sendAPIRequest("/customers?limit=1000", ["filter" => ["segment" => ["id" => $segment]]], 'POST');
 
       $result = json_decode($result, true);
 
@@ -112,7 +107,7 @@ class CustomerIO {
       $existing = $result["identifiers"];
 
       while($result["next"]) {
-        $result = $this->sendBetaRequest("/customers?start=".$result["next"]."&limit=200", ["filter" => ["segment" => ["id" => $segment]]], 'POST');
+        $result = $this->sendAPIRequest("/customers?start=".$result["next"]."&limit=200", ["filter" => ["segment" => ["id" => $segment]]], 'POST');
         $result = json_decode($result, true);
         $existing = array_merge($existing, $result["identifiers"]);
       }
@@ -124,31 +119,34 @@ class CustomerIO {
     }
   }
 
+  private function sendTrackRequest($endpoint, $data, $method = 'PUT') {
+    $url = $this->addRegion(self::CUSTOMERIO_TRACK_API_URL).$endpoint;
+    
+    $auth = base64_encode($this->siteId.":".$this->trackApiKey);
+
+    return $this->sendRequest($url, $data, $method, [CURLOPT_HTTPHEADER => [
+      'Authorization: Basic '.$auth,
+      'content-type: application/json'
+    ]]);
+  }
+
+  private function sendAPIRequest($endpoint, $data, $method = 'PUT') {
+    $url = $this->addRegion(self::CUSTOMERIO_API_URL).$endpoint;
+    return $this->sendRequest($url, $data, $method);
+  }
+
   private function sendBetaRequest($endpoint, $data, $method = 'PUT') {
     if(!$this->enabled) return false; 
 
     try {
-      $auth = $this->betaApiAppKey;
       $content = json_encode($data);
       $url = $this->addRegion(self::CUSTOMERIO_BETA_API_URL).$endpoint;
 
-      $conn = curl_init($url);
-      if($method != 'GET')
-        curl_setopt($conn, CURLOPT_POSTFIELDS, $content);
-      curl_setopt($conn, CURLOPT_RETURNTRANSFER, true);
-      curl_setopt($conn, CURLOPT_CUSTOMREQUEST, $method);
-      curl_setopt($conn, CURLOPT_HTTPHEADER, [
+      $auth = $this->betaApiKey;
+      $result = $this->sendRequest($url,$content,$method,[CURLOPT_HTTPHEADER => [
         'Authorization: Bearer '.$auth,
         'content-type: application/json'
-      ]);
-
-      $result = curl_exec($conn);
-      $code = curl_getinfo($conn, CURLINFO_RESPONSE_CODE);
-
-      curl_close($conn);
-
-      if($code >= 300 || !$result || preg_match("/DOCTYPE html/i",$result)) throw new Exception("Failed to call customer.io");
-
+      ]]);
     } catch(Exception $ex) {
       //log error
       $err = $ex->getMessage();
@@ -158,21 +156,28 @@ class CustomerIO {
     return $result;
   }
 
-  private function sendRequest($url, $data, $method = 'PUT') {
+  private function sendRequest($url, $data, $method = 'PUT', $options = []) {
     if(!$this->enabled) return false; 
 
     try {
-      $auth = base64_encode($this->siteId.":".$this->apiKey);
       $content = json_encode($data);
 
+      $headers = null;
+      if(isset($options[CURLOPT_HTTPHEADER])) {
+        $headers = $options[CURLOPT_HTTPHEADER];
+      } else {
+        $auth = $this->apiKey;
+        $headers = [
+          'Authorization: Bearer '.$auth,
+          'content-type: application/json'
+        ];  
+      }
+
       $conn = curl_init($url);
-      curl_setopt($conn, CURLOPT_POSTFIELDS, $content);
+      if($method != 'GET') curl_setopt($conn, CURLOPT_POSTFIELDS, $content);
       curl_setopt($conn, CURLOPT_RETURNTRANSFER, true);
       curl_setopt($conn, CURLOPT_CUSTOMREQUEST, $method);
-      curl_setopt($conn, CURLOPT_HTTPHEADER, [
-        'Authorization: Basic '.$auth,
-        'content-type: application/json'
-      ]);
+      curl_setopt($conn, CURLOPT_HTTPHEADER, $headers);
 
       $result = curl_exec($conn);
       $code = curl_getinfo($conn, CURLINFO_RESPONSE_CODE);
@@ -182,20 +187,18 @@ class CustomerIO {
       if($code >= 300 || !$result || preg_match("/DOCTYPE html/i",$result)) throw new Exception("Failed to call customer.io");
 
     } catch(Exception $ex) {
-      //log error
+      //TODO: log error
       $err = $ex->getMessage();
 
       return false;
     }
-    return true;
+    return $result;
   }
 
   //this function receives a segment and/or a list of email recepients, and sends a transaction broadcast to them.
   //recipients, if provided, should be an array of emails
   //the andOr operator determines if we should send only to emails in segment or to all emails AND all segment customers (unification vs slicing)
   function sendBroadcast($broadcastId, $params, $recipients = [], $segment = null, $andOr = "and") {
-    if(!$this->enabled) return false; 
-
     if(wp_get_environment_type() != "production" && isset($params["subject"])) {
       $params["subject"] = "[DEVELOPMENT] ".$params["subject"];
     }
@@ -227,34 +230,19 @@ class CustomerIO {
     
     $data["recipients"] = $recips;
 
-    $url = $this->addRegion(self::CUSTOMERIO_CAMPAIGN_API_URL)."/campaigns/".$broadcastId."/triggers";
+    $url = $this->addRegion(self::CUSTOMERIO_API_URL)."/campaigns/".$broadcastId."/triggers";
 
+    $result = false;
     try {
       $content = json_encode($data);
-
-      $conn = curl_init($url);
-      curl_setopt($conn, CURLOPT_POSTFIELDS, $content);
-      curl_setopt($conn, CURLOPT_RETURNTRANSFER, true);
-      curl_setopt($conn, CURLOPT_CUSTOMREQUEST, "POST");
-      curl_setopt($conn, CURLOPT_HTTPHEADER, [
-        'Authorization: Bearer '.$this->getBroadcastKey(),
-        'content-type: application/json'
-      ]);
-
-      $result = curl_exec($conn);
-      $code = curl_getinfo($conn, CURLINFO_RESPONSE_CODE);
-
-      curl_close($conn);
-
-      if($code >= 300 || !$result || preg_match("/DOCTYPE html/i",$result)) throw new Exception("Failed to call customer.io");
-      
+      $result = $this->sendRequest($url,$content,"POST");
     } catch(Exception $ex) {
-      //log error
+      //TODO: log error
       $err = $ex->getMessage();
 
       return false;
     }
-    return true;
+    return $result;
   }
 
   function unsubscribeCustomer($email) {
