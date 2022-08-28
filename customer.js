@@ -3,13 +3,17 @@ JSUtils.domReady(() => {
     e.preventDefault();
     try {
       const form = document.querySelector('.form-table');
+      const defCCode = form.querySelector('[name=default_country_code]');
+      defCCode.value = defCCode.value.replace(/[^\d]/g, '');
+
       const data = {
         enabled: form.querySelector('[name=enabled]').checked,
-        region: form.querySelector('[name=region]').value,
-        trackApiKey: form.querySelector('[name=track_api_key]').value,
-        siteId: form.querySelector('[name=site_id]').value,
-        apiKey: form.querySelector('[name=api_key]').value,
-        betaApiKey: form.querySelector('[name=beta_api_key]').value
+        region: form.querySelector('[name=region]').value.trim(),
+        trackApiKey: form.querySelector('[name=track_api_key]').value.trim(),
+        siteId: form.querySelector('[name=site_id]').value.trim(),
+        apiKey: form.querySelector('[name=api_key]').value.trim(),
+        betaApiKey: form.querySelector('[name=beta_api_key]').value.trim(),
+        defaultCountryCode: defCCode.value
       };
 
       await JSUtils.fetch(window.customerIOData.ajax_url, {

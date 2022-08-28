@@ -5,6 +5,7 @@ class CustomerIO {
   private $siteId = "";
   private $apiKey = "";
   private $betaApiKey = "";
+  private $defaultCountryCode = "1";
   private $region = "us";
   
   const CUSTOMERIO_TRACK_API_URL = "https://track.customer.io/api/v1";
@@ -26,6 +27,8 @@ class CustomerIO {
     $this->siteId = $data["siteid"];
     $this->region = !empty($data["region"]) ? $data["region"] : 'us';
     $this->betaApiKey = !empty($data["betaapikey"]) ? $data["betaapikey"] : '';
+    $this->defaultCountryCode = !empty($data["defaultcountrycode"]) ? 
+      $data["defaultcountrycode"] : '1';
     $this->apiKey = !empty($data["apikey"]) ?$data["apikey"] : '';
   }
 
@@ -53,19 +56,24 @@ class CustomerIO {
     return $this->betaApiKey;
   }
 
+  function getDefaultCountryCode() {
+    return $this->defaultCountryCode;
+  }
+
   function addRegion($url) {
     if($this->region != "us") 
       $url = preg_replace("/^([^\.]*)(.*$)/","$1-".$this->region."$2",$url);
     return $url;
   }
 
-  static function saveSettings($enabled, $trackApiKey, $siteId, $apiKey, $betaApiKey, $region) {
+  static function saveSettings($enabled, $trackApiKey, $siteId, $apiKey, $betaApiKey, $defaultCountryCode, $region) {
     $data = [
       "enabled" => $enabled,
       "siteid" => $siteId,
       "trackapikey" => $trackApiKey,
       "apikey" => $apiKey,
       "betaapikey" => $betaApiKey,
+      "defaultcountrycode" => $defaultCountryCode,
       "region" => $region
     ];
     update_option(self::CUSTOMERIO_SETTINGS,json_encode($data,JSON_UNESCAPED_SLASHES));
@@ -263,6 +271,21 @@ class CustomerIO {
     return $this->sendTrackRequest("/customers/".$email, $data);
   }
 
+  function preparePhone($phone) {
+    if(preg_match('/^\+/',$phone)) return $phone;
+    if(preg_match('/^00/',$phone)) {
+      return preg_replace('/^00/','+',$phone);
+    }
+
+    $defaultCountryCode = $this->defaultCountryCode;
+
+    if(preg_match('/^0/',$phone)) {
+      return '+'.$defaultCountryCode.preg_replace('/^0/','',$phone);
+    }
+    
+    return '+'.$defaultCountryCode.$phone;
+  }
+
   function createCustomer($email, $name, $data = []) {
     if(!$email || !is_email($email)) return false;
 
@@ -270,6 +293,9 @@ class CustomerIO {
 
     if(!empty($name))
       $data["name"]  = $name;
+
+    if(!empty($data["phone"]))
+      $data["phone"] = $this->preparePhone($data["phone"]);
 
     return $this->sendTrackRequest("/customers/".$email, $data);
   }

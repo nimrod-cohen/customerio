@@ -47,6 +47,13 @@ $customerio = new CustomerIO();
         <label>this is only needed if you're using beta API features</label>
       </td>
     </tr>
+    <tr>
+      <th><label for="default_country_code">Default Country Code</label></th>
+      <td>
+        <input name="default_country_code" id="default_country_code" type="text" value="<?php echo $customerio->getDefaultCountryCode() ?>" class="regular-text code">
+        <label>Which country code to add to phone numbers, if not provided</label>
+      </td>
+    </tr>
   </tbody>
 </table>
 <h2>Test integration</h2>
