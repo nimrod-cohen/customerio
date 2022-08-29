@@ -273,10 +273,10 @@ class CustomerIO {
 
   function preparePhone($phone) {
     if(preg_match('/^\+/',$phone)) {
-      return '+'.preg_replace('/[^\d]/g','',$phone);
+      return '+'.preg_replace('/[^\d]/','',$phone);
     }
 
-    $phone = preg_replace('/[^\d]/g','',$phone);
+    $phone = preg_replace('/[^\d]/','',$phone);
     
     if(preg_match('/^00/',$phone)) {
       return preg_replace('/^00/','+',$phone);
