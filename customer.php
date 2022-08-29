@@ -265,6 +265,9 @@ class CustomerIO {
 
     $data = array_merge(["email" => $email], $data);
 
+    if(!empty($data["phone"]))
+      $data["phone"] = $this->preparePhone($data["phone"]);
+
     if(!empty($name))
       $data["name"]  = $name;
 
