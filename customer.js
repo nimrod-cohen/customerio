@@ -5,6 +5,10 @@ JSUtils.domReady(() => {
     document.querySelectorAll('#customerio-admin-tabs .tab-content').forEach(tab => {
       tab.style.display = tab.classList.contains(activeTab) ? 'block' : 'none';
     });
+    document.querySelectorAll('#customerio-admin-navs a.nav-tab').forEach(tab => {
+      tab.classList.remove('nav-tab-active');
+    });
+    document.querySelector(`#customerio-admin-navs a.nav-tab[tabId='${activeTab}']`).classList.add('nav-tab-active');
   });
   state.set('active-tab', 'customerio');
 
