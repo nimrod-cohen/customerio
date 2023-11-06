@@ -6,8 +6,10 @@
 class EventTracking {
 
   const C_API_URL = 'https://query.bursa4u.com/event';
+  const C_SESSION_KEY = 'tracked_visit';
 
-  public function __construct() {
+  private static function log($message) {
+    //CustomerIOAdmin::log($message);
   }
 
   public function init() {
@@ -46,22 +48,40 @@ class EventTracking {
   }
 
   public function track_visit() {
-    if (session_status() !== PHP_SESSION_ACTIVE) {
-      session_start();
-    }
-
-    if (isset($_SESSION["visit_tracked"]) ||
-      is_admin() ||
+    if (is_admin() ||
+      !is_user_logged_in() ||
       !$this->autotrack_enabled()) {
       return;
+    }
+
+    EventTracking::log('starting to track visit');
+
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+      session_start();
     }
 
     $user = wp_get_current_user();
     if (!($user instanceof WP_User)) {
       return;
     }
+    EventTracking::log('tracking user ' . $user->ID());
+
+    $email = $user->user_email;
+
+    $sessionToken = EventTracking::C_SESSION_KEY . preg_replace('/[^a-zA-Z]/', '', $email);
+
+    EventTracking::log('session token is ' . $sessionToken);
+
+    if (isset($_SESSION[$sessionToken]) && $_SESSION[$sessionToken] === true) {
+      EventTracking::log('session key already exists, visit already tracked');
+      return;
+    }
+
+    EventTracking::log('should track visit, user is ' . $user->user_email);
+
     if ($this->track($user->user_email, null, 'visit')) {
-      $_SESSION["visit_tracked"] = true;
+      EventTracking::log('tracking success, marking session');
+      $_SESSION[$sessionToken] = true;
     }
   }
 
@@ -87,8 +107,6 @@ class EventTracking {
         '__token' => $this->token()
       ];
 
-      return true;
-
       $response = wp_remote_request(EventTracking::C_API_URL,
         [
           'headers' => $headers,
@@ -112,7 +130,7 @@ class EventTracking {
 
     } catch (Exception $ex) {
       //document the error
-      $message = $ex->getMessage();
+      EventTracking::log($ex->getMessage());
       return false;
     }
   }
