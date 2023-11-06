@@ -6,7 +6,7 @@
  * Plugin Name:       CustomerIO integration
  * Plugin URI:        http://wordpress.org/plugins/customerio
  * Description:       Integrate Wordpress with Customer IO
- * Version:           2.1.3
+ * Version:           2.2.0
  * Author:            Nimrod Cohen
  * Author URI:        https://google.com?q=who+is+the+dude
  * License:           GPL-2.0+
@@ -15,31 +15,31 @@
  * Domain Path:       /languages
  */
 
- class CustomerIOAdmin {
+class CustomerIOAdmin {
   function __construct() {
-     add_action( 'admin_menu', [$this,'add_settings_page'] );
-     add_action( 'admin_enqueue_scripts', [$this, 'init_admin']);
-     add_action('wp_ajax_save_customerio_settings', [$this, 'save_settings']);
-     add_action('wp_ajax_test_customer_email', [$this, 'test_customer_email']);
-     add_action('wp_ajax_test_track_auth', [$this, 'test_track_auth']);
-     add_action('wp_ajax_test_broadcast', [$this, 'test_broadcast']);
-     add_filter( 'plugin_action_links_customerio/index.php', [$this,'add_settings_link'] );
+    add_action('admin_menu', [$this, 'add_settings_page']);
+    add_action('admin_enqueue_scripts', [$this, 'init_admin']);
+    add_action('wp_ajax_save_customerio_settings', [$this, 'save_settings']);
+    add_action('wp_ajax_test_customer_email', [$this, 'test_customer_email']);
+    add_action('wp_ajax_test_track_auth', [$this, 'test_track_auth']);
+    add_action('wp_ajax_test_broadcast', [$this, 'test_broadcast']);
+    add_filter('plugin_action_links_customerio/index.php', [$this, 'add_settings_link']);
   }
 
   static function get_version() {
-    $plugin_data = get_plugin_data( __FILE__ );
+    $plugin_data = get_plugin_data(__FILE__);
     return $plugin_data['Version'];
   }
 
-  function add_settings_link( $links ) {
+  function add_settings_link($links) {
     // Build and escape the URL.
-    $url = esc_url( add_query_arg(
+    $url = esc_url(add_query_arg(
       'page',
       'customerio',
       get_admin_url() . 'options-general.php'
-    ) );
+    ));
 
-    $settings_link = "<a href='$url'>" . __( 'Settings' ) . '</a>';
+    $settings_link = "<a href='$url'>" . __('Settings') . '</a>';
 
     array_push($links, $settings_link);
 
@@ -47,22 +47,24 @@
   }
 
   function add_settings_page() {
-    add_options_page('CustomerIO Settings', 'CustomerIO', 'manage_options', 'customerio', [$this,'show_settings_page']);
+    add_options_page('CustomerIO Settings', 'CustomerIO', 'manage_options', 'customerio', [$this, 'show_settings_page']);
   }
 
   function show_settings_page() {
-    include_once("settings.php");
+    include_once "settings.php";
   }
 
   function init_admin($page) {
-    if($page !== "settings_page_customerio") return;
+    if ($page !== "settings_page_customerio") {
+      return;
+    }
 
-    wp_enqueue_script("customerio_js", plugin_dir_url(__FILE__)."/customer.js",["wpjsutils"]);
-		wp_localize_script('customerio_js',
-		'customerIOData', [
-			'ajax_url' => admin_url('admin-ajax.php'),
-			'nonce' => wp_create_nonce('afm-nonce'),
-		]);
+    wp_enqueue_script("customerio_js", plugin_dir_url(__FILE__) . "/customer.js", ["wpjsutils"]);
+    wp_localize_script('customerio_js',
+      'customerIOData', [
+        'ajax_url' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('afm-nonce')
+      ]);
   }
 
   function test_broadcast() {
@@ -73,7 +75,7 @@
       "subject" => "CustomerIO plugin test mail",
       "content" => date("Y-m-d H:i:s")
     ], [$email]);
-    echo json_encode(['error'=>$result === false, "message" => $result ? 'Message sent successfully': 'Failed to send message']);
+    echo json_encode(['error' => $result === false, "message" => $result ? 'Message sent successfully' : 'Failed to send message']);
     die;
   }
 
@@ -81,10 +83,10 @@
     try {
       $cio = new CustomerIO();
       $result = $cio->testAuth();
-      echo json_encode(['error'=>false, "message" => $result ? 'Tracking Authenticated successfully' : 'Could not authenticate Tracking']);
+      echo json_encode(['error' => false, "message" => $result ? 'Tracking Authenticated successfully' : 'Could not authenticate Tracking']);
       die;
-    } catch(Exception $ex){
-      echo json_encode(["error"=>true,"message" => $ex->getMessage()]);
+    } catch (Exception $ex) {
+      echo json_encode(["error" => true, "message" => $ex->getMessage()]);
       die;
     }
   }
@@ -93,14 +95,16 @@
     try {
       $email = $_REQUEST["email"];
 
-      if(!filter_var($email, FILTER_VALIDATE_EMAIL)) throw new exception("Email address is not valid");
+      if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        throw new exception("Email address is not valid");
+      }
 
       $cio = new CustomerIO();
       $result = $cio->customerExists($email);
-      echo json_encode(['error'=>false, "message" => $result ? 'Customer exists' : 'Customer does not exist']);
+      echo json_encode(['error' => false, "message" => $result ? 'Customer exists' : 'Customer does not exist']);
       die;
-    } catch(Exception $ex){
-      echo json_encode(["error"=>true,"message" => $ex->getMessage()]);
+    } catch (Exception $ex) {
+      echo json_encode(["error" => true, "message" => $ex->getMessage()]);
       die;
     }
   }
@@ -118,15 +122,16 @@
 
       echo json_encode([]);
       die;
-    } catch(Exception $ex){
-      echo json_encode(["error"=>true,"message" => $ex->getMessage()]);
+    } catch (Exception $ex) {
+      echo json_encode(["error" => true, "message" => $ex->getMessage()]);
       die;
     }
   }
 }
 
 include_once "customer.php";
- 
+include_once "event_tracking.php";
+
 $customerioAdmin = new CustomerIOAdmin();
 
 ?>

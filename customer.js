@@ -1,8 +1,17 @@
 JSUtils.domReady(() => {
+  const state = window.StateManagerFactory();
+
+  state.listen('active-tab', activeTab => {
+    document.querySelectorAll('#customerio-admin-tabs .tab-content').forEach(tab => {
+      tab.style.display = tab.classList.contains(activeTab) ? 'block' : 'none';
+    });
+  });
+  state.set('active-tab', 'customerio');
+
   document.querySelector('#submit_customerio_settings')?.addEventListener('click', async e => {
     e.preventDefault();
     try {
-      const form = document.querySelector('.form-table');
+      const form = document.querySelector('.tab-content.customerio .form-table');
       const defCCode = form.querySelector('[name=default_country_code]');
       defCCode.value = defCCode.value.replace(/[^\d]/g, '');
 
@@ -22,6 +31,33 @@ JSUtils.domReady(() => {
       });
 
       window.notifications.show('CustomerIO settings saved successfully', 'success');
+    } catch (ex) {
+      window.notifications.show(ex.message, 'error');
+    }
+  });
+
+  document.querySelectorAll('#customerio-admin-navs a.nav-tab').forEach(tab =>
+    tab.addEventListener('click', e => {
+      state.set('active-tab', e.target.getAttribute('tabId'));
+    })
+  );
+
+  document.querySelector('#submit_event_tracking_settings')?.addEventListener('click', async e => {
+    e.preventDefault();
+    try {
+      const form = document.querySelector('.tab-content.event-tracking .form-table');
+      const enabled = form.querySelector('[name=enable_track_events]');
+      const apiToken = form.querySelector('[name=api_token]');
+      const companyId = form.querySelector('[name=company_id]');
+
+      let result = await JSUtils.fetch(window.customerIOData.ajax_url, {
+        action: 'save_event_tracking_settings',
+        enable: enabled.checked ? '1' : '0',
+        api_token: apiToken.value,
+        company_id: companyId.value
+      });
+
+      window.notifications.show(result.message, result.error ? 'error' : 'success');
     } catch (ex) {
       window.notifications.show(ex.message, 'error');
     }
