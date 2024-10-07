@@ -178,6 +178,8 @@ class CustomerIO {
     }
 
     try {
+      $data = apply_filters('customerio/request_data', $data);
+
       $content = json_encode($data);
 
       $headers = null;
