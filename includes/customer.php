@@ -171,7 +171,7 @@ class CustomerIO {
   }
 
   private function sendRequest($url, $data, $method = 'PUT', $options = []) {
-    if (!$this->enabled || wp_get_environment_type() !== 'production') {
+    if (!$this->enabled) {
       return false;
     }
 

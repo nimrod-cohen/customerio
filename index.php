@@ -6,7 +6,7 @@
  * Plugin Name:       CustomerIO integration
  * Plugin URI:        https://github.com/nimrod-cohen/customerio
  * Description:       Integrate Wordpress with Customer IO
- * Version:           2.3.4
+ * Version:           2.4.0
  * Author:            nimrod-cohen
  * Author URI:        https://github.com/nimrod-cohen/customerio
  * License:           GPL-2.0+
@@ -26,6 +26,9 @@ class CustomerIOAdmin {
     add_filter('plugin_action_links_customerio/index.php', [$this, 'add_settings_link']);
 
     add_action('admin_init', function () {new GitHubPluginUpdater();});
+
+    $commPrefs = CommPrefs::get_instance();
+    add_shortcode("cio-comm-prefs", [$commPrefs, "show_comm_prefs"]);
   }
 
   static function get_version() {
