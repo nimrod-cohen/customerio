@@ -4,11 +4,11 @@
  *
  * @wordpress-plugin
  * Plugin Name:       CustomerIO integration
- * Plugin URI:        http://wordpress.org/plugins/customerio
+ * Plugin URI:        https://github.com/nimrod-cohen/customerio
  * Description:       Integrate Wordpress with Customer IO
- * Version:           2.3.0
+ * Version:           2.3.1
  * Author:            nimrod-cohen
- * Author URI:        https://google.com?q=who+is+the+dude
+ * Author URI:        https://github.com/nimrod-cohen/customerio
  * License:           GPL-2.0+
  * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
  * Text Domain:       customerio
