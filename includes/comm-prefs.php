@@ -28,7 +28,22 @@ class CommPrefs {
       $cio = new CustomerIO();
       $preferences = stripslashes($_POST['preferences']);
 
-      $cio->updateCustomerById($_POST["cid"], ["comm_prefs" => $preferences]);
+      $prefsArray = json_decode($preferences, true);
+
+      //check if all preferences are with value 0
+      $full_unsubscribe = array_reduce($prefsArray, function ($carry, $item) {
+        return $carry && $item == "0";
+      }, true);
+
+      $data = ["comm_prefs" => $preferences];
+
+      if ($full_unsubscribe) {
+        $data["unsubscribed"] = true;
+      } else {
+        $data["unsubscribed"] = false;
+      }
+
+      $cio->updateCustomerById($_POST["cid"], $data);
 
       wp_send_json_success();
     } catch (Exception $e) {
