@@ -33,6 +33,10 @@ if (!class_exists('GitHubPluginUpdater')) {
         return;
       }
       $this->plugin_file = $this->plugin_slug . '/' . $this->plugin_slug . '.php';
+      if (!file_exists(WP_PLUGIN_DIR . '/' . $this->plugin_file)) {
+        $this->plugin_file = $this->plugin_slug . '/index.php';
+      }
+
       $this->plugin_data = get_plugin_data(WP_PLUGIN_DIR . '/' . $this->plugin_file);
     }
 
