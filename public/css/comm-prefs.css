@@ -1,9 +1,10 @@
 .communcation-preferences {
   width: -moz-max-content;
   width: max-content;
-  max-width: 800px;
+  max-width: 100%;
   margin: 0 auto;
   margin-top: 30px;
+  padding: 0 20px;
 }
 .communcation-preferences .comm-prefs-title {
   font-size: 1.2em;
