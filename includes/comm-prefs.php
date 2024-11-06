@@ -82,7 +82,7 @@ class CommPrefs {
     wp_enqueue_script('cio-comm-prefs-js');
     wp_enqueue_style('cio-comm-prefs-styles');
 
-    $preferences = $customer['attributes']['comm_prefs'] ?? null;
+    $preferences = $customer['attributes']['comm_prefs'] ?? [];
 
     if (!empty($preferences)) {
       $preferences = json_decode($preferences, true);
