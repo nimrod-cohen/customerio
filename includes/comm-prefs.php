@@ -122,7 +122,7 @@ class CommPrefs {
         <li>
           <label class='comm-pref-title' for='$id'>
             <input type='checkbox' id='$id' name='$id' value='" . $pref_type["setting"] . "' " .
-        ($preferences[$pref_type["setting"]] == "1" ? "checked" : "") . ">" .
+        (!isset($preferences[$pref_type["setting"]]) || $preferences[$pref_type["setting"]] == "1" ? "checked" : "") . ">" .
         $pref_type['title'] .
         "</label><br/>
           <span class='comm-pref-desc'>" . $pref_type['desc'] . "</span>
