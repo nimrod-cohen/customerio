@@ -159,7 +159,7 @@ if (!class_exists('GitHubPluginUpdater')) {
       }
     }
 
-    public function fix_folder($response, $hook_extra, &$result) {
+    public function fix_folder($response, $hook_extra, $result) {
       global $wp_filesystem;
       $proper_destination = WP_PLUGIN_DIR . '/' . $this->plugin_slug;
       $wp_filesystem->move($result['destination'], $proper_destination);
