@@ -46,16 +46,19 @@
   font-weight: bold;
   border: none;
   border-radius: 3px;
+  cursor: pointer;
 }
 .communcation-preferences .button.secondary {
   background-color: #ebecf1;
   color: #0c353b;
 }
-.communcation-preferences .button.loading {
+.communcation-preferences .button.locked {
   background-color: #839599;
   color: white;
   cursor: not-allowed;
   pointer-events: none;
+}
+.communcation-preferences .button.loading {
   position: relative;
   padding-right: 32px;
 }

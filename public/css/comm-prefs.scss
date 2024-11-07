@@ -51,17 +51,21 @@
     font-weight: bold;
     border: none;
     border-radius: 3px;
+    cursor: pointer;
 
     &.secondary {
       background-color: #ebecf1;
       color: #0c353b;
     }
 
-    &.loading {
+    &.locked {
       background-color: #839599;
       color: white;
       cursor: not-allowed;
       pointer-events: none;
+    }
+
+    &.loading {
       position: relative;
       padding-right: 32px;
 

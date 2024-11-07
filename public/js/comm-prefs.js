@@ -1,13 +1,20 @@
 class CommPrefs {
-  choose_unsubscribe = () => {
+  choose_unsubscribe = e => {
     document.querySelectorAll('.communcation-preferences input[type="checkbox"]').forEach(checkbox => {
       checkbox.checked = false;
     });
+
+    this.save_comm_prefs(e);
   };
 
   save_comm_prefs = async e => {
+    const btns = document.querySelectorAll('button.comm-prefs-action');
+
     try {
       e.target.classList.add('loading');
+      btns.forEach(btn => {
+        btn.classList.add('locked');
+      });
 
       var preferences = {};
       document.querySelectorAll('.communcation-preferences input[type="checkbox"]').forEach(checkbox => {
@@ -29,6 +36,9 @@ class CommPrefs {
       }
     } finally {
       e.target.classList.remove('loading');
+      btns.forEach(btn => {
+        btn.classList.remove('locked');
+      });
     }
   };
 
