@@ -34,6 +34,7 @@
         font-size: 1rem;
         font-weight: bold;
         cursor: pointer;
+        margin-bottom: 0;
       }
       .comm-pref-desc {
         font-weight: normal;
@@ -79,7 +80,7 @@
       background-color: #0c353b;
       color: white;
       padding: 0.5rem 1rem;
-      font-size: 0.9rem;
+      font-size: 1rem;
       font-weight: bold;
       border: none;
       border-radius: 3px;
@@ -126,5 +127,28 @@
   }
   100% {
     transform: rotate(360deg);
+  }
+}
+
+@media screen and (max-height: 1000px) {
+  .communcation-preferences {
+    margin-top: 25px;
+
+    ul.communication-types {
+      margin: 2rem 0;
+      li {
+        margin-bottom: 0.8rem;
+      }
+    }
+  }
+}
+
+@media screen and (max-width: 356px) {
+  .communcation-preferences {
+    .comm-prefs-actions {
+      .button {
+        font-size: 0.9rem;
+      }
+    }
   }
 }
