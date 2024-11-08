@@ -133,8 +133,11 @@ class CommPrefs {
         </li>";
     }
     $result .= "</ul>
-          <button class='comm-prefs-action save-comm-prefs button primary'>שמור העדפות</button>
-          <button class='comm-prefs-action full-unsubscribe button secondary'>הסרה מכל הרשימות</button>
+        <div class='comm-prefs-message'></div>
+        <div class='comm-prefs-actions'>
+          <button class='save-comm-prefs button primary'>שמור העדפות</button>
+          <button class='full-unsubscribe button secondary'>הסרה מכל הרשימות</button>
+        </div>
       </div>";
 
     return $result;

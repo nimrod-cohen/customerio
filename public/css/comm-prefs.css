@@ -38,7 +38,35 @@
   font-size: 0.9rem;
   color: gray;
 }
-.communcation-preferences .button {
+.communcation-preferences .comm-prefs-message {
+  width: 100%;
+  text-align: center;
+  border: solid 2px #0c0cec;
+  border-radius: 3px;
+  padding: 5px;
+  margin-bottom: 20px;
+  background: aliceblue;
+  color: #0c0cec;
+  display: none;
+}
+.communcation-preferences .comm-prefs-message.success {
+  border-color: #27ad58;
+  color: #27ad58;
+  background: #ecfff3;
+}
+.communcation-preferences .comm-prefs-message.error {
+  border-color: #f00;
+  color: #f00;
+  background: #fdd;
+}
+.communcation-preferences .comm-prefs-message.show {
+  display: block;
+}
+.communcation-preferences .comm-prefs-actions {
+  display: flex;
+  gap: 10px;
+}
+.communcation-preferences .comm-prefs-actions .button {
   background-color: #0c353b;
   color: white;
   padding: 0.5rem 1rem;
@@ -48,21 +76,21 @@
   border-radius: 3px;
   cursor: pointer;
 }
-.communcation-preferences .button.secondary {
+.communcation-preferences .comm-prefs-actions .button.secondary {
   background-color: #ebecf1;
   color: #0c353b;
 }
-.communcation-preferences .button.locked {
+.communcation-preferences .comm-prefs-actions .button.locked {
   background-color: #839599;
   color: white;
   cursor: not-allowed;
   pointer-events: none;
 }
-.communcation-preferences .button.loading {
+.communcation-preferences .comm-prefs-actions .button.loading {
   position: relative;
   padding-right: 32px;
 }
-.communcation-preferences .button.loading::before {
+.communcation-preferences .comm-prefs-actions .button.loading::before {
   background-image: url('data:image/svg+xml,<%3Fxml version="1.0" encoding="UTF-8" standalone="no"%3F><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg width="100%" height="100%" viewBox="0 0 44 44" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;"><g transform="matrix(0.6,0,0,0.6,-8.37723,-8.37723)"><path d="M44,22.6C44.709,19.877 47.186,17.962 50,17.962C52.814,17.962 55.291,19.877 56,22.6C56.693,25.344 59.181,27.283 62.011,27.283C63.135,27.283 64.237,26.978 65.2,26.4C66.166,25.8 67.281,25.482 68.418,25.482C71.764,25.482 74.518,28.236 74.518,31.582C74.518,32.719 74.2,33.834 73.6,34.8C73.022,35.763 72.717,36.865 72.717,37.989C72.717,40.819 74.656,43.307 77.4,44C80.123,44.709 82.038,47.186 82.038,50C82.038,52.814 80.123,55.291 77.4,56C74.656,56.693 72.717,59.181 72.717,62.011C72.717,63.135 73.022,64.237 73.6,65.2C74.2,66.166 74.518,67.281 74.518,68.418C74.518,71.764 71.764,74.518 68.418,74.518C67.281,74.518 66.166,74.2 65.2,73.6C64.237,73.022 63.135,72.717 62.011,72.717C59.181,72.717 56.693,74.656 56,77.4C55.291,80.123 52.814,82.038 50,82.038C47.186,82.038 44.709,80.123 44,77.4C43.307,74.656 40.819,72.717 37.989,72.717C36.865,72.717 35.763,73.022 34.8,73.6C33.834,74.2 32.719,74.518 31.582,74.518C28.236,74.518 25.482,71.764 25.482,68.418C25.482,67.281 25.8,66.166 26.4,65.2C26.978,64.237 27.283,63.135 27.283,62.011C27.283,59.181 25.344,56.693 22.6,56C19.877,55.291 17.962,52.814 17.962,50C17.962,47.186 19.877,44.709 22.6,44C25.344,43.307 27.283,40.819 27.283,37.989C27.283,36.865 26.978,35.763 26.4,34.8C25.8,33.834 25.482,32.719 25.482,31.582C25.482,28.236 28.236,25.482 31.582,25.482C32.719,25.482 33.834,25.8 34.8,26.4C35.763,26.978 36.865,27.283 37.989,27.283C40.819,27.283 43.307,25.344 44,22.6Z" style="fill:none;fill-rule:nonzero;stroke:rgb(255,255,255);stroke-width:8px;"/><path d="M60.7,50C60.7,55.87 55.87,60.7 50,60.7C44.13,60.7 39.3,55.87 39.3,50C39.3,44.13 44.13,39.3 50,39.3C55.87,39.3 60.7,44.13 60.7,50Z" style="fill:none;fill-rule:nonzero;stroke:rgb(255,255,255);stroke-width:8px;"/></g></svg>');
   position: absolute;
   display: inline-block;

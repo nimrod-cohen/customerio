@@ -8,7 +8,7 @@ class CommPrefs {
   };
 
   save_comm_prefs = async e => {
-    const btns = document.querySelectorAll('button.comm-prefs-action');
+    const btns = document.querySelectorAll('.comm-prefs-actions button');
 
     try {
       e.target.classList.add('loading');
@@ -30,9 +30,9 @@ class CommPrefs {
       const response = await JSUtils.fetch(__commPrefs.ajax_url, data);
 
       if (response.success) {
-        window.notifications.show('העדפותיך נשמרו בהצלחה', 'success');
+        this.show_message('העדפותיך נשמרו בהצלחה', 'success');
       } else {
-        window.notifications.show('אירעה שגיאה בשמירת העדפותיך', 'error');
+        this.show_message('אירעה שגיאה בשמירת העדפותיך', 'error');
       }
     } finally {
       e.target.classList.remove('loading');
@@ -40,6 +40,19 @@ class CommPrefs {
         btn.classList.remove('locked');
       });
     }
+  };
+
+  show_message = (message, type = 'info') => {
+    const msg = document.querySelector('.comm-prefs-message');
+
+    msg.innerHTML = message;
+    msg.classList.add('show', type);
+
+    setTimeout(() => {
+      msg.innerHTML = '';
+      msg.classList.remove('show');
+      msg.classList.remove('error', 'success', 'info');
+    }, 3000);
   };
 
   load_preferences = () => {
