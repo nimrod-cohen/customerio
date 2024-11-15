@@ -66,11 +66,17 @@ class CommPrefs {
 }
 
 JSUtils.domReady(() => {
+  if (document.querySelector('.communcation-preferences') === null) return;
+
   const commPrefs = new CommPrefs();
 
   commPrefs.load_preferences();
 
-  document.querySelector('button.full-unsubscribe').addEventListener('click', commPrefs.choose_unsubscribe);
+  document
+    .querySelector('.communcation-preferences button.full-unsubscribe')
+    ?.addEventListener('click', commPrefs.choose_unsubscribe);
 
-  document.querySelector('button.save-comm-prefs').addEventListener('click', commPrefs.save_comm_prefs);
+  document
+    .querySelector('.communcation-preferences button.save-comm-prefs')
+    ?.addEventListener('click', commPrefs.save_comm_prefs);
 });

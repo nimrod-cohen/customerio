@@ -54,7 +54,6 @@ class CommPrefs {
   public function register_assets() {
     wp_register_style("cio-comm-prefs-styles", plugins_url("customerio/public/css/comm-prefs.css"));
     wp_enqueue_style("cio-comm-prefs-styles");
-    //load comm-prefs.js
     wp_register_script("cio-comm-prefs-js", plugins_url("customerio/public/js/comm-prefs.js"), ["wpjsutils"]);
     wp_enqueue_script("cio-comm-prefs-js");
 
@@ -78,9 +77,6 @@ class CommPrefs {
     if (!$customer) {
       return "";
     }
-
-    wp_enqueue_script('cio-comm-prefs-js');
-    wp_enqueue_style('cio-comm-prefs-styles');
 
     $preferences = $customer['attributes']['comm_prefs'] ?? [];
 
