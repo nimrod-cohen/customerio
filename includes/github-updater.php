@@ -32,17 +32,12 @@ if (!class_exists('GitHubPluginUpdater')) {
       if ($this->plugin_data) {
         return;
       }
-      $this->plugin_file = $this->plugin_slug . '/' . $this->plugin_slug . '.php';
-      if (!file_exists(WP_PLUGIN_DIR . '/' . $this->plugin_file)) {
-        $this->plugin_file = $this->plugin_slug . '/index.php';
-      }
-
       $this->plugin_data = get_plugin_data(WP_PLUGIN_DIR . '/' . $this->plugin_file);
     }
 
-    public function __construct() {
-      $file = __FILE__;
-      $this->plugin_slug = explode('/', plugin_basename($file))[0];
+    public function __construct($base_file) {
+      $this->plugin_file = str_replace(WP_PLUGIN_DIR . '/', '', $base_file);
+      $this->plugin_slug = explode('/', plugin_basename($base_file))[0];
       $this->cache_key = $this->plugin_slug . '_transient_data';
       $this->latest_release_cache_key = $this->plugin_slug . '_release';
       $this->cache_allowed = true;
@@ -52,6 +47,32 @@ if (!class_exists('GitHubPluginUpdater')) {
       add_filter('site_transient_update_plugins', [$this, 'update']);
       add_action('upgrader_process_complete', [$this, 'finish_install'], 10, 2);
       add_action('upgrader_post_install', [$this, 'fix_folder'], 10, 3);
+
+      add_action('admin_post_' . $this->plugin_slug . '_clear_cache', [$this, 'clear_latest_release_cache']);
+      add_action('admin_notices', [$this, 'display_cache_cleared_message']);
+      add_filter('plugin_action_links_' . $this->plugin_file, [$this, 'add_clear_cache_link']);
+    }
+
+    public function add_clear_cache_link($links) {
+      $url = admin_url('admin-post.php?action=' . $this->plugin_slug . '_clear_cache');
+      $link = "<a href='$url'>Clear Cache</a>";
+      return array_merge($links, [$link]);
+    }
+
+    public function clear_latest_release_cache() {
+      delete_transient($this->latest_release_cache_key);
+      wp_redirect(add_query_arg('cache_cleared_' . $this->plugin_slug, 'true', wp_get_referer()));
+      exit;
+    }
+
+    public function display_cache_cleared_message() {
+      if (!isset($_GET['cache_cleared_' . $this->plugin_slug])) {
+        return;
+      }
+      echo "<div class='notice notice-success is-dismissible'>
+        <p>Cache cleared successfully</p>
+      </div>
+      ";
     }
 
     function get_plugin_info($res, $action, $args) {
