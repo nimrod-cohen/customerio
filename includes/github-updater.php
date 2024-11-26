@@ -2,7 +2,7 @@
 /*
  * Plugin name: Misha Update Checker
  * Description: This simple plugin does nothing, only gets updates from a custom server
- * Version: 1.1
+ * Version: 1.2.1
  * Author: Misha Rudrastyh, changes by Nimrod Cohen
  * Author URI: https://rudrastyh.com
  * License: GPL
@@ -21,7 +21,6 @@ if (!class_exists('GitHubPluginUpdater')) {
 
   class GitHubPluginUpdater {
     private $plugin_slug;
-    private $cache_key;
     private $latest_release_cache_key;
     private $cache_allowed;
     private $latest_release = null;
@@ -38,7 +37,6 @@ if (!class_exists('GitHubPluginUpdater')) {
     public function __construct($base_file) {
       $this->plugin_file = str_replace(WP_PLUGIN_DIR . '/', '', $base_file);
       $this->plugin_slug = explode('/', plugin_basename($base_file))[0];
-      $this->cache_key = $this->plugin_slug . '_transient_data';
       $this->latest_release_cache_key = $this->plugin_slug . '_release';
       $this->cache_allowed = true;
       $this->get_plugin_data();
@@ -60,7 +58,12 @@ if (!class_exists('GitHubPluginUpdater')) {
     }
 
     public function clear_latest_release_cache() {
-      delete_transient($this->latest_release_cache_key);
+      if ($this->cache_allowed) {
+        delete_transient($this->latest_release_cache_key);
+      }
+      delete_site_transient('update_plugins');
+      wp_update_plugins();
+
       wp_redirect(add_query_arg('cache_cleared_' . $this->plugin_slug, 'true', wp_get_referer()));
       exit;
     }
@@ -175,7 +178,6 @@ if (!class_exists('GitHubPluginUpdater')) {
 
       // just clean the cache when new plugin version is installed
       if ($this->cache_allowed) {
-        delete_transient($this->cache_key);
         delete_transient($this->latest_release_cache_key);
       }
     }
