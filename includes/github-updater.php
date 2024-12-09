@@ -2,8 +2,8 @@
 /*
  * Plugin name: Misha Update Checker
  * Description: This simple plugin does nothing, only gets updates from a custom server
- * Version: 1.2.1
- * Author: Misha Rudrastyh, changes by Nimrod Cohen
+ * Version: 1.3
+ * Author: Misha Rudrastyh, changes by Nimrod Cohen & Oleg Shumar
  * Author URI: https://rudrastyh.com
  * License: GPL
  *
@@ -20,6 +20,10 @@ defined('ABSPATH') || exit;
 if (!class_exists('GitHubPluginUpdater')) {
 
   class GitHubPluginUpdater {
+    /**
+     * This is the naming of the folder
+     */
+    const PLUGIN_DIR_NAME = 'github-updater-plugin';
     private $plugin_slug;
     private $latest_release_cache_key;
     private $cache_allowed;
@@ -32,6 +36,7 @@ if (!class_exists('GitHubPluginUpdater')) {
         return;
       }
       $this->plugin_data = get_plugin_data(WP_PLUGIN_DIR . '/' . $this->plugin_file);
+
     }
 
     public function __construct($base_file) {
@@ -160,7 +165,7 @@ if (!class_exists('GitHubPluginUpdater')) {
         $res->new_version = $this->latest_release["version"];
         $res->tested = $this->plugin_data["TestedUpTo"] ?? null;
 
-        $res->package = $this->latest_release["zipball_url"];
+        $res->package = $this->process_zip_file($this->latest_release["zipball_url"]);
 
         $transient->response[$res->plugin] = $res;
       }
@@ -183,12 +188,115 @@ if (!class_exists('GitHubPluginUpdater')) {
     }
 
     public function fix_folder($response, $hook_extra, $result) {
-      global $wp_filesystem;
-      $proper_destination = WP_PLUGIN_DIR . '/' . $this->plugin_slug;
-      $wp_filesystem->move($result['destination'], $proper_destination);
-      $result['destination'] = $proper_destination;
-      $result['destination_name'] = $this->plugin_slug;
-      return $response;
+      $tmp_name = $this->get_tmp_name();
+      if (file_exists($tmp_name)) {
+        unlink($tmp_name);
+      }
+
+      $uploads_dir = wp_upload_dir(); // TODO: 'temp_folder' could be moved to another constant as we use it twice in code
+      $this->delete_directory($uploads_dir['basedir'] . '/temp_folder');
+    }
+
+    /**
+     * Process and manipulate a zip file from a given URL.
+     *
+     * @param string $file_url The URL of the zip file to be processed.
+     *
+     * @return string The path to the newly created zip file after processing, or an error message.
+     */
+    public function process_zip_file($file_url) {
+      require_once ABSPATH . 'wp-admin/includes/file.php';
+
+      $response = wp_remote_get($file_url, array('timeout' => 300));
+
+      if (is_wp_error($response) || 200 !== wp_remote_retrieve_response_code($response)) {
+        return 'Error downloading the zip file.';
+      }
+
+      $zip_content = $response['body'];
+      $tmp_file = wp_tempnam($file_url);
+      file_put_contents($tmp_file, $zip_content);
+
+      WP_Filesystem();
+      $uploads_dir = wp_upload_dir();
+      $destination = $uploads_dir['basedir'] . '/temp_folder';
+      if (!is_dir($destination)) {
+        mkdir($destination);
+      }
+
+      $unzipfile = unzip_file($tmp_file, $destination);
+
+      if (is_wp_error($unzipfile)) {
+        unlink($tmp_file);
+
+        return 'Error unzipping the file.';
+      }
+
+      unlink($tmp_file);
+
+      $unzipped_dir = glob($destination . '/*', GLOB_ONLYDIR)[0];
+      $new_name = $destination . '/' . GitHubPluginUpdater::PLUGIN_DIR_NAME;
+
+      if (!rename($unzipped_dir, $new_name)) {
+        return 'Error renaming the directory.';
+      }
+
+      $zip = new ZipArchive();
+      $new_zip_name = $this->get_tmp_name();
+
+      if ($zip->open($new_zip_name, ZipArchive::CREATE) === true) {
+        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($new_name));
+        foreach ($iterator as $filename => $fileobject) {
+          $local_path = GitHubPluginUpdater::PLUGIN_DIR_NAME . "/" . substr($filename, strlen($new_name) + 1);
+          if (!$fileobject->isDir()) {
+            $zip->addFile($filename, $local_path);
+          }
+        }
+        $zip->close();
+      } else {
+        return 'Error creating the .zip file.';
+      }
+
+      return $new_zip_name;
+    }
+
+    /**
+     * Retrieves a temporary file name for a specific directory.
+     *
+     * @return string The temporary file name including the directory path.
+     */
+    private function get_tmp_name() {
+      $uploads_dir = wp_upload_dir();
+
+      return $uploads_dir['basedir'] . '/' . GitHubPluginUpdater::PLUGIN_DIR_NAME . ".zip";
+    }
+
+    /**
+     * Clean-up. Deletes a directory and its contents recursively.
+     *
+     * @param string $dir The directory path to be deleted.
+     *
+     * @return bool True if the directory and its contents are successfully deleted, false otherwise.
+     */
+    private function delete_directory($dir) {
+      if (!file_exists($dir)) {
+        return true;
+      }
+      if (!is_dir($dir)) {
+        return unlink($dir);
+      }
+
+      foreach (scandir($dir) as $item) {
+        if ($item == '.' || $item == '..') {
+          continue;
+        }
+        if (!$this->delete_directory($dir . DIRECTORY_SEPARATOR . $item)) {
+          return false;
+        }
+      }
+
+      return rmdir($dir);
     }
   }
+
 }
