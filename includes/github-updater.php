@@ -23,7 +23,6 @@ if (!class_exists('GitHubPluginUpdater')) {
     /**
      * This is the naming of the folder
      */
-    const PLUGIN_DIR_NAME = 'github-updater-plugin';
     private $plugin_slug;
     private $latest_release_cache_key;
     private $cache_allowed;
@@ -235,7 +234,7 @@ if (!class_exists('GitHubPluginUpdater')) {
       unlink($tmp_file);
 
       $unzipped_dir = glob($destination . '/*', GLOB_ONLYDIR)[0];
-      $new_name = $destination . '/' . GitHubPluginUpdater::PLUGIN_DIR_NAME;
+      $new_name = $destination . '/' . $this->plugin_slug;
 
       if (!rename($unzipped_dir, $new_name)) {
         return 'Error renaming the directory.';
@@ -247,7 +246,7 @@ if (!class_exists('GitHubPluginUpdater')) {
       if ($zip->open($new_zip_name, ZipArchive::CREATE) === true) {
         $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($new_name));
         foreach ($iterator as $filename => $fileobject) {
-          $local_path = GitHubPluginUpdater::PLUGIN_DIR_NAME . "/" . substr($filename, strlen($new_name) + 1);
+          $local_path = $this->plugin_slug . "/" . substr($filename, strlen($new_name) + 1);
           if (!$fileobject->isDir()) {
             $zip->addFile($filename, $local_path);
           }
@@ -268,7 +267,7 @@ if (!class_exists('GitHubPluginUpdater')) {
     private function get_tmp_name() {
       $uploads_dir = wp_upload_dir();
 
-      return $uploads_dir['basedir'] . '/' . GitHubPluginUpdater::PLUGIN_DIR_NAME . ".zip";
+      return $uploads_dir['basedir'] . '/' . $this->plugin_slug . ".zip";
     }
 
     /**
