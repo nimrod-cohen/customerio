@@ -89,13 +89,9 @@ class CommPrefs {
       "desc" => "קבלת הזמנות להרצאות של ינון אריאלי על השוק ושיטות השקעה - שיווקי",
       "setting" => "webinar-invites"
     ], [
-      "title" => "הודעות בסמס - הזמנות להרצאות",
-      "desc" => "תזכורות על הרצאות של ינון אריאלי בסמס - שיווקי",
+      "title" => "הודעות בווטסאפ/סמס - הזמנות להרצאות - שיווקי",
+      "desc" => "תזכורות על הרצאות של ינון אריאלי בווטסאפ/סמס",
       "setting" => "webinar-invites-sms"
-    ], [
-      "title" => "הנחות והטבות",
-      "desc" => "מידע על הטבות מיוחדות לזמן מוגבל על קורסים או התיק - שיווקי",
-      "setting" => "speical-offers"
     ], [
       "title" => "״התיק המנצח״ - עדכונים שוטפים",
       "desc" => "מיועד למנויי התיק המנצח - עדכוני מוצר, סקירות והתראות קניה ומכירה",
@@ -128,12 +124,12 @@ class CommPrefs {
           <span class='comm-pref-desc'>" . $pref_type['desc'] . "</span>
         </li>";
     }
-    $result .= "</ul>
+    $result .= "</ul>ֿ
         <div class='comm-prefs-message'></div>
-        <div class='comm-prefs-actions'>
-          <button class='save-comm-prefs button primary'>שמור העדפות</button>
-          <button class='full-unsubscribe button secondary'>הסרה מכל הרשימות</button>
-        </div>
+          <div class='comm-prefs-actions'>
+            <button class='save-comm-prefs button primary'>שמור העדפות</button>
+            <button class='full-unsubscribe button secondary'>הסרה מכל הרשימות</button>
+          </div>
       </div>";
 
     return $result;
