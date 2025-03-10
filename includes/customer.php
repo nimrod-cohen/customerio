@@ -107,6 +107,35 @@ class CustomerIO {
     }
   }
 
+  //create segment, and add customers to it from array of emails
+  function createSegment($name, $emails) {
+    try {
+      $result = $this->sendAPIRequest("/segments", ["segment" => ["name" => $name, "type" => "manual"]], 'POST');
+
+      $result = json_decode($result, true);
+
+      if (!isset($result["segment"]["id"])) {
+        return false;
+      }
+
+      $segmentId = $result["segment"]["id"];
+
+      $chunks = array_chunk($emails, 1000);
+
+      foreach ($chunks as $chunk) {
+        $result = $this->sendTrackRequest("/segments/" . $segmentId . "/add_customers?id_type=email", ["ids" => $chunk], 'POST');
+        if (!$result) {
+          return false;
+        }
+      }
+
+      return $segmentId;
+
+    } catch (Exception $ex) {
+      return false;
+    }
+  }
+
   function getBySegment($segment) {
     try {
       $result = $this->sendAPIRequest("/customers?limit=1000", ["filter" => ["segment" => ["id" => $segment]]], 'POST');
