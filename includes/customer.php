@@ -96,7 +96,7 @@ class CustomerIO {
 
   function customerExists($email) {
     try {
-      $existing = $this->sendAPIRequest("/customers?email=" . $email, [], 'GET');
+      $existing = $this->sendAPIRequest("/customers?email=" . urlencode($email), [], 'GET');
 
       $existing = json_decode($existing, true);
 
@@ -325,7 +325,7 @@ class CustomerIO {
       $data["name"] = $name;
     }
 
-    return $this->sendTrackRequest("/customers/" . $email, $data);
+    return $this->sendTrackRequest("/customers/" . urlencode($email), $data);
   }
 
   function searchCustomerById($cio_id) {
@@ -392,7 +392,7 @@ class CustomerIO {
       $data["phone"] = $this->preparePhone($data["phone"]);
     }
 
-    return $this->sendTrackRequest("/customers/" . $email, $data);
+    return $this->sendTrackRequest("/customers/" . urlencode($email), $data);
   }
 
   function sendEvent($event, $email, $data) {
@@ -401,7 +401,7 @@ class CustomerIO {
       "data" => $data
     ];
 
-    return $this->sendTrackRequest("/customers/" . $email . "/events", $data, 'POST');
+    return $this->sendTrackRequest("/customers/" . urlencode($email) . "/events", $data, 'POST');
   }
 }
 ?>
