@@ -75,7 +75,10 @@ class CommPrefs {
     $customer = $cio->searchCustomerById($this->CIO_ID);
 
     if (!$customer) {
-      return "";
+      return "<div class='communcation-preferences'>
+        <h2 class='comm-prefs-title'>ניהול העדפות</h2>
+        <p class='comm-prefs-not-found'>לא נמצא משתמש עם הפרטים שסופקו. ייתכן שהמשתמש הוסר מרשימת התפוצה.</p>
+      </div>";
     }
 
     $preferences = $customer['attributes']['comm_prefs'] ?? [];
@@ -124,7 +127,7 @@ class CommPrefs {
           <span class='comm-pref-desc'>" . $pref_type['desc'] . "</span>
         </li>";
     }
-    $result .= "</ul>ֿ
+    $result .= "</ul>
         <div class='comm-prefs-message'></div>
           <div class='comm-prefs-actions'>
             <button class='save-comm-prefs button primary'>שמור העדפות</button>
