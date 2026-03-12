@@ -26,7 +26,8 @@ JSUtils.domReady(() => {
         siteId: form.querySelector('[name=site_id]').value.trim(),
         apiKey: form.querySelector('[name=api_key]').value.trim(),
         betaApiKey: form.querySelector('[name=beta_api_key]').value.trim(),
-        defaultCountryCode: defCCode.value
+        defaultCountryCode: defCCode.value,
+        verificationMessageId: form.querySelector('[name=verification_message_id]').value.trim()
       };
 
       await JSUtils.fetch(window.customerIOData.ajax_url, {

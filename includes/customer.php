@@ -7,6 +7,7 @@ class CustomerIO {
   private $betaApiKey = "";
   private $defaultCountryCode = "1";
   private $region = "us";
+  private $verificationMessageId = "";
 
   const CUSTOMERIO_TRACK_API_URL = "https://track.customer.io/api/v1";
   const CUSTOMERIO_API_URL = "https://api.customer.io/v1";
@@ -33,6 +34,7 @@ class CustomerIO {
     $this->defaultCountryCode = !empty($data["defaultcountrycode"]) ?
     $data["defaultcountrycode"] : '1';
     $this->apiKey = !empty($data["apikey"]) ? $data["apikey"] : '';
+    $this->verificationMessageId = !empty($data["verificationmessageid"]) ? $data["verificationmessageid"] : '';
   }
 
   function isEnabled() {
@@ -63,6 +65,10 @@ class CustomerIO {
     return $this->defaultCountryCode;
   }
 
+  function getVerificationMessageId() {
+    return $this->verificationMessageId;
+  }
+
   function addRegion($url) {
     if ($this->region != "us") {
       $url = preg_replace("/^([^\.]*)(.*$)/", "$1-" . $this->region . "$2", $url);
@@ -71,7 +77,7 @@ class CustomerIO {
     return $url;
   }
 
-  static function saveSettings($enabled, $trackApiKey, $siteId, $apiKey, $betaApiKey, $defaultCountryCode, $region) {
+  static function saveSettings($enabled, $trackApiKey, $siteId, $apiKey, $betaApiKey, $defaultCountryCode, $region, $verificationMessageId = '') {
     $data = [
       "enabled" => $enabled,
       "siteid" => $siteId,
@@ -79,7 +85,8 @@ class CustomerIO {
       "apikey" => $apiKey,
       "betaapikey" => $betaApiKey,
       "defaultcountrycode" => $defaultCountryCode,
-      "region" => $region
+      "region" => $region,
+      "verificationmessageid" => $verificationMessageId
     ];
     update_option(self::CUSTOMERIO_SETTINGS, json_encode($data, JSON_UNESCAPED_SLASHES));
   }
@@ -393,6 +400,23 @@ class CustomerIO {
     }
 
     return $this->sendTrackRequest("/customers/" . urlencode($email), $data);
+  }
+
+  function sendTransactionalEmail($to, $transactionalMessageId, $messageData = []) {
+    if (!$this->enabled || empty($transactionalMessageId)) {
+      return false;
+    }
+
+    $data = [
+      'transactional_message_id' => (int) $transactionalMessageId,
+      'to' => $to,
+      'identifiers' => ['email' => $to],
+      'message_data' => $messageData
+    ];
+
+    $url = $this->addRegion(self::CUSTOMERIO_API_URL) . '/send/email';
+
+    return $this->sendRequest($url, $data, 'POST');
   }
 
   function sendEvent($event, $email, $data) {

@@ -59,6 +59,13 @@ $eventTracking = new EventTracking();
             <label>Which country code to add to phone numbers, if not provided</label>
           </td>
         </tr>
+        <tr>
+          <th><label for="verification_message_id">Verification Email - Transactional Message ID</label></th>
+          <td>
+            <input name="verification_message_id" id="verification_message_id" type="text" value="<?php echo $customerio->getVerificationMessageId() ?>" class="regular-text code">
+            <label>Customer.io transactional message ID for email verification. Leave empty to disable verification.</label>
+          </td>
+        </tr>
       </tbody>
     </table>
     <h2>Test integration</h2>
