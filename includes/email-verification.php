@@ -47,9 +47,10 @@ class EmailVerification {
       'email' => $email
     ]);
 
-    // Delete the profile that Customer.io auto-creates from the transactional send
-    // so only verified emails become real contacts
+    // Mark the auto-created profile as unverified so it can be excluded from journeys
     sleep(1);
+    $cio->updateCustomer($email, $name, ['email_verified' => false]);
+
     $cio->deleteCustomer($email);
 
     return $result;
