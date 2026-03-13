@@ -303,6 +303,14 @@ class CustomerIO {
     return $result;
   }
 
+  function deleteCustomer($email) {
+    if (!$email || !is_email($email)) {
+      return false;
+    }
+
+    return $this->sendTrackRequest("/customers/" . urlencode($email), [], 'DELETE');
+  }
+
   function unsubscribeCustomer($email) {
     if (!$email || !is_email($email)) {
       return false;

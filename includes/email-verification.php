@@ -41,11 +41,18 @@ class EmailVerification {
     $verify_url = site_url('?cio_verify=' . $token);
 
     $cio = new CustomerIO();
-    return $cio->sendTransactionalEmail($email, $transactional_message_id, [
+    $result = $cio->sendTransactionalEmail($email, $transactional_message_id, [
       'verify_url' => $verify_url,
       'name' => $name,
       'email' => $email
     ]);
+
+    // Delete the profile that Customer.io auto-creates from the transactional send
+    // so only verified emails become real contacts
+    sleep(1);
+    $cio->deleteCustomer($email);
+
+    return $result;
   }
 
   /**
@@ -135,3 +142,6 @@ HTML;
     exit;
   }
 }
+
+// Auto-instantiate so the init hook is always registered
+EmailVerification::get_instance();
