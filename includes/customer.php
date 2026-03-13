@@ -241,7 +241,7 @@ class CustomerIO {
 
       curl_close($conn);
 
-      if ($code >= 300 || !$result || preg_match("/DOCTYPE html/i", $result)) {
+      if ($code >= 300 || ($method != 'DELETE' && !$result) || preg_match("/DOCTYPE html/i", $result)) {
         throw new Exception("Failed to call customer.io");
       }
 
