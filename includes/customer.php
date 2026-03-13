@@ -408,7 +408,7 @@ class CustomerIO {
     }
 
     $data = [
-      'transactional_message_id' => (int) $transactionalMessageId,
+      'transactional_message_id' => is_numeric($transactionalMessageId) ? (int) $transactionalMessageId : $transactionalMessageId,
       'to' => $to,
       'identifiers' => ['email' => $to],
       'message_data' => $messageData
