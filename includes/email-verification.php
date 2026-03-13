@@ -41,16 +41,19 @@ class EmailVerification {
     $verify_url = site_url('?cio_verify=' . $token);
 
     $cio = new CustomerIO();
+
+    // Create the customer with email_verified=false BEFORE sending the transactional email
+    // so the attribute is set atomically and journeys can exclude unverified contacts
+    $cio->createCustomer($email, $name, ['email_verified' => false]);
+
     $result = $cio->sendTransactionalEmail($email, $transactional_message_id, [
       'verify_url' => $verify_url,
       'name' => $name,
       'email' => $email
     ]);
 
-    // Mark the auto-created profile as unverified so it can be excluded from journeys
+    // Wait for the transactional email to be processed, then delete the profile
     sleep(1);
-    $cio->updateCustomer($email, $name, ['email_verified' => false]);
-
     $cio->deleteCustomer($email);
 
     return $result;
