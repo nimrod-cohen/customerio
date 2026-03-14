@@ -52,10 +52,6 @@ class EmailVerification {
       'email' => $email
     ]);
 
-    // Wait for the transactional email to be processed, then delete the profile
-    sleep(1);
-    $cio->deleteCustomer($email);
-
     return $result;
   }
 
