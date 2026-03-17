@@ -18,11 +18,28 @@ class EmailVerification {
   }
 
   /**
+   * Default texts for verification pages (English LTR).
+   * Callers can override any key via $data['texts'].
+   */
+  private static function default_texts() {
+    return [
+      'lang'             => 'en',
+      'dir'              => 'ltr',
+      'verified_title'   => 'Email verified successfully!',
+      'verified_message' => 'Welcome to our newsletter.',
+      'expired_title'    => 'This link is invalid or has expired',
+      'expired_message'  => 'Please sign up again on our website.',
+      'back_label'       => 'Back to site',
+    ];
+  }
+
+  /**
    * Initiate email verification - stores pending data and sends transactional email
    *
    * @param string $email
    * @param string $name
-   * @param array $data Additional data to pass through on verification
+   * @param array $data Additional data to pass through on verification.
+   *                     May include a 'texts' key with UI string overrides.
    * @param int $transactional_message_id Customer.io transactional message ID
    * @return bool
    */
@@ -44,7 +61,9 @@ class EmailVerification {
 
     // Create the customer with email_verified=false BEFORE sending the transactional email
     // so the attribute is set atomically and journeys can exclude unverified contacts
-    $cio->createCustomer($email, $name, ['email_verified' => false]);
+    $customer_data = $data;
+    unset($customer_data['texts']);
+    $cio->createCustomer($email, $name, array_merge($customer_data, ['email_verified' => false]));
 
     $result = $cio->sendTransactionalEmail($email, $transactional_message_id, [
       'verify_url' => $verify_url,
@@ -67,9 +86,13 @@ class EmailVerification {
     $pending = get_transient(self::TRANSIENT_PREFIX . $token);
 
     if (!$pending) {
+      $texts = apply_filters('customerio/verification_texts', self::default_texts());
       $this->render_page(
-        'הקישור אינו תקף או שפג תוקפו',
-        'אנא הירשמ/י שוב באתר.'
+        $texts['expired_title'],
+        $texts['expired_message'],
+        $texts['lang'],
+        $texts['dir'],
+        $texts['back_label']
       );
       return;
     }
@@ -80,20 +103,26 @@ class EmailVerification {
     // Clean up
     delete_transient(self::TRANSIENT_PREFIX . $token);
 
+    $texts = array_merge(self::default_texts(), $pending['data']['texts'] ?? []);
+
     $this->render_page(
-      'האימייל שלך אומת בהצלחה!',
-      'ברוך/ה הבא/ה לניוזלטר של בורסה4יו.'
+      $texts['verified_title'],
+      $texts['verified_message'],
+      $texts['lang'],
+      $texts['dir'],
+      $texts['back_label']
     );
   }
 
-  private function render_page($title, $message) {
+  private function render_page($title, $message, $lang = 'en', $dir = 'ltr', $back_label = 'Back to site') {
     $site_url = home_url();
     $site_name = get_bloginfo('name');
+    $direction_css = $dir === 'rtl' ? 'direction: rtl;' : '';
 
     header('Content-Type: text/html; charset=utf-8');
     echo <<<HTML
 <!DOCTYPE html>
-<html dir="rtl" lang="he">
+<html dir="{$dir}" lang="{$lang}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -107,7 +136,7 @@ class EmailVerification {
       min-height: 100vh;
       margin: 0;
       background: #f5f5f5;
-      direction: rtl;
+      {$direction_css}
     }
     .container {
       background: white;
@@ -134,7 +163,7 @@ class EmailVerification {
   <div class="container">
     <h1>{$title}</h1>
     <p>{$message}</p>
-    <a href="{$site_url}">חזרה לאתר</a>
+    <a href="{$site_url}">{$back_label}</a>
   </div>
 </body>
 </html>
