@@ -397,7 +397,12 @@ class CustomerIO {
       return false;
     }
 
-    $data = array_merge(["email" => $email, "unsubscribed" => false], $data);
+    $domain = substr($email, strpos($email, '@') + 1);
+    $data = array_merge(["email" => $email, "unsubscribed" => false, "domain" => $domain], $data);
+
+    if (!$this->customerExists($email)) {
+      $data["created_at"] = time();
+    }
 
     if (!empty($name)) {
       $data["name"] = $name;
