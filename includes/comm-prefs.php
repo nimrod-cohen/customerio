@@ -45,6 +45,8 @@ class CommPrefs {
 
       $cio->updateCustomerById($_POST["cid"], $data);
 
+      do_action('customerio/comm_prefs_updated', $_POST["cid"], $prefsArray, $full_unsubscribe);
+
       wp_send_json_success();
     } catch (Exception $e) {
       wp_send_json_error($e->getMessage());
