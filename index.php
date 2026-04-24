@@ -6,7 +6,7 @@
  * Plugin Name:       CustomerIO integration
  * Plugin URI:        https://github.com/nimrod-cohen/customerio
  * Description:       Integrate Wordpress with Customer IO
- * Version:           2.9.0
+ * Version:           3.0.0
  * Author:            nimrod-cohen
  * Author URI:        https://github.com/nimrod-cohen/customerio
  * License:           GPL-2.0+
@@ -29,9 +29,11 @@ class CustomerIOAdmin {
       $updater = new \CustomerIO\GitHubPluginUpdater(__FILE__);
     });
 
-    add_action('init', ['\\CustomerIO\\BotDetector', 'registerCron']);
-    register_activation_hook(__FILE__, ['\\CustomerIO\\BotDetector', 'registerCron']);
-    register_deactivation_hook(__FILE__, ['\\CustomerIO\\BotDetector', 'unregisterCron']);
+    // Clear legacy bot-detector cron hooks (moved to fv-country-blocker 1.4.0+).
+    register_activation_hook(__FILE__, function () {
+      wp_clear_scheduled_hook('bot_detector_refresh_tor');
+      wp_clear_scheduled_hook('bot_detector_refresh_datacenter');
+    });
 
     $commPrefs = CommPrefs::get_instance();
     add_shortcode("cio-comm-prefs", [$commPrefs, "show_comm_prefs"]);
