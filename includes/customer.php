@@ -242,12 +242,14 @@ class CustomerIO {
       curl_close($conn);
 
       if ($code >= 300 || ($method != 'DELETE' && !$result) || preg_match("/DOCTYPE html/i", $result)) {
-        throw new Exception("Failed to call customer.io");
+        throw new Exception("HTTP $code | body=" . substr((string) $result, 0, 500));
       }
 
     } catch (Exception $ex) {
-      //TODO: log error
       $err = $ex->getMessage();
+      if (class_exists('ValueSchool')) {
+        ValueSchool::log("[cio] $method $url failed: $err | payload=" . substr((string) $content, 0, 500));
+      }
 
       return false;
     }
