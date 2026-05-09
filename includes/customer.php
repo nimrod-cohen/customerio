@@ -247,8 +247,12 @@ class CustomerIO {
 
     } catch (Exception $ex) {
       $err = $ex->getMessage();
+      $payloadPreview = substr((string) $content, 0, 500);
+      if (class_exists('YP\Logger')) {
+        \YP\Logger::log('CIO', "$method $url failed: $err | payload=$payloadPreview", \YP\Logger::L_ERROR);
+      }
       if (class_exists('ValueSchool')) {
-        ValueSchool::log("[cio] $method $url failed: $err | payload=" . substr((string) $content, 0, 500));
+        ValueSchool::log("[cio] $method $url failed: $err | payload=$payloadPreview");
       }
 
       return false;
@@ -297,10 +301,15 @@ class CustomerIO {
     try {
       $result = $this->sendRequest($url, $data, "POST");
     } catch (Exception $ex) {
-      //TODO: log error
       $err = $ex->getMessage();
-
+      if (class_exists('YP\Logger')) {
+        \YP\Logger::log('CIO', "broadcast $broadcastId failed: $err", \YP\Logger::L_ERROR);
+      }
       return false;
+    }
+    if ($result === false && class_exists('YP\Logger')) {
+      // sendRequest swallowed an HTTP error and returned false — record the broadcast that didn't fire.
+      \YP\Logger::log('CIO', "broadcast $broadcastId not delivered (sendRequest returned false). recipients=" . json_encode($recips), \YP\Logger::L_WARNING);
     }
     return $result;
   }
