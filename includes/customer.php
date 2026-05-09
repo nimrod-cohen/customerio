@@ -254,9 +254,6 @@ class CustomerIO {
       do_action('customerio/log', 'error', "$method $url failed: $err", [
         'method' => $method, 'url' => $url, 'error' => $err, 'payload' => $payloadPreview,
       ]);
-      if (class_exists('ValueSchool')) {
-        ValueSchool::log("[cio] $method $url failed: $err | payload=$payloadPreview");
-      }
 
       return false;
     }
