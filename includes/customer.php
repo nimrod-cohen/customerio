@@ -248,9 +248,12 @@ class CustomerIO {
     } catch (Exception $ex) {
       $err = $ex->getMessage();
       $payloadPreview = substr((string) $content, 0, 500);
-      if (class_exists('YP\Logger')) {
-        \YP\Logger::log('CIO', "$method $url failed: $err | payload=$payloadPreview", \YP\Logger::L_ERROR);
-      }
+      // Emit a generic action so any consumer plugin (per site) can route this to its
+      // own logger. customerio stays site-agnostic — no class references to specific
+      // projects.
+      do_action('customerio/log', 'error', "$method $url failed: $err", [
+        'method' => $method, 'url' => $url, 'error' => $err, 'payload' => $payloadPreview,
+      ]);
       if (class_exists('ValueSchool')) {
         ValueSchool::log("[cio] $method $url failed: $err | payload=$payloadPreview");
       }
@@ -302,14 +305,16 @@ class CustomerIO {
       $result = $this->sendRequest($url, $data, "POST");
     } catch (Exception $ex) {
       $err = $ex->getMessage();
-      if (class_exists('YP\Logger')) {
-        \YP\Logger::log('CIO', "broadcast $broadcastId failed: $err", \YP\Logger::L_ERROR);
-      }
+      do_action('customerio/log', 'error', "broadcast $broadcastId failed: $err", [
+        'broadcast_id' => $broadcastId, 'error' => $err,
+      ]);
       return false;
     }
-    if ($result === false && class_exists('YP\Logger')) {
-      // sendRequest swallowed an HTTP error and returned false — record the broadcast that didn't fire.
-      \YP\Logger::log('CIO', "broadcast $broadcastId not delivered (sendRequest returned false). recipients=" . json_encode($recips), \YP\Logger::L_WARNING);
+    if ($result === false) {
+      // sendRequest swallowed an HTTP error and returned false — surface the dropped broadcast.
+      do_action('customerio/log', 'warning', "broadcast $broadcastId not delivered (sendRequest returned false)", [
+        'broadcast_id' => $broadcastId, 'recipients' => $recips,
+      ]);
     }
     return $result;
   }
