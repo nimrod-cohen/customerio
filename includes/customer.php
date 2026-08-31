@@ -168,6 +168,57 @@ class CustomerIO {
     }
   }
 
+  //list all segments. dynamic segments come back with their `conditions` tree.
+  function getSegments($timeout = 0) {
+    $result = $this->sendAPIRequest("/segments", [], 'GET', $timeout ? [CURLOPT_TIMEOUT => $timeout] : []);
+    if (!$result) {
+      return null;
+    }
+
+    $result = json_decode($result, true);
+
+    return isset($result["segments"]) ? $result["segments"] : null;
+  }
+
+  function getSegment($segmentId, $timeout = 0) {
+    $result = $this->sendAPIRequest("/segments/" . intval($segmentId), [], 'GET', $timeout ? [CURLOPT_TIMEOUT => $timeout] : []);
+    if (!$result) {
+      return null;
+    }
+
+    $result = json_decode($result, true);
+
+    return isset($result["segment"]) ? $result["segment"] : null;
+  }
+
+  //segments are addressed by id in the API, but humans know them by name.
+  function getSegmentByName($name, $timeout = 0) {
+    $segments = $this->getSegments($timeout);
+    if (empty($segments)) {
+      return null;
+    }
+
+    foreach ($segments as $segment) {
+      if (strcasecmp(trim($segment["name"]), trim($name)) === 0) {
+        return $segment;
+      }
+    }
+
+    return null;
+  }
+
+  //how many profiles the segment currently holds. null when it cannot be read.
+  function getSegmentCount($segmentId, $timeout = 0) {
+    $result = $this->sendAPIRequest("/segments/" . intval($segmentId) . "/customer_count", [], 'GET', $timeout ? [CURLOPT_TIMEOUT => $timeout] : []);
+    if (!$result) {
+      return null;
+    }
+
+    $result = json_decode($result, true);
+
+    return isset($result["count"]) ? intval($result["count"]) : null;
+  }
+
   private function sendTrackRequest($endpoint, $data, $method = 'PUT') {
     $url = $this->addRegion(self::CUSTOMERIO_TRACK_API_URL) . $endpoint;
 
@@ -179,9 +230,9 @@ class CustomerIO {
     ]]);
   }
 
-  private function sendAPIRequest($endpoint, $data, $method = 'PUT') {
+  private function sendAPIRequest($endpoint, $data, $method = 'PUT', $options = []) {
     $url = $this->addRegion(self::CUSTOMERIO_API_URL) . $endpoint;
-    return $this->sendRequest($url, $data, $method);
+    return $this->sendRequest($url, $data, $method, $options);
   }
 
   private function sendBetaRequest($endpoint, $data, $method = 'PUT') {
@@ -235,6 +286,13 @@ class CustomerIO {
       curl_setopt($conn, CURLOPT_RETURNTRANSFER, true);
       curl_setopt($conn, CURLOPT_CUSTOMREQUEST, $method);
       curl_setopt($conn, CURLOPT_HTTPHEADER, $headers);
+
+      // Callers on a page-render path pass a timeout so a slow Customer.io
+      // cannot hold up the response. Without it curl waits indefinitely.
+      if (!empty($options[CURLOPT_TIMEOUT])) {
+        curl_setopt($conn, CURLOPT_TIMEOUT, $options[CURLOPT_TIMEOUT]);
+        curl_setopt($conn, CURLOPT_CONNECTTIMEOUT, min(5, $options[CURLOPT_TIMEOUT]));
+      }
 
       $result = curl_exec($conn);
       $code = curl_getinfo($conn, CURLINFO_RESPONSE_CODE);
