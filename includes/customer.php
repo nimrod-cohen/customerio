@@ -485,21 +485,139 @@ class CustomerIO {
     return $this->sendTrackRequest("/customers/" . urlencode($email), $data);
   }
 
-  function sendTransactionalEmail($to, $transactionalMessageId, $messageData = []) {
-    if (!$this->enabled || empty($transactionalMessageId)) {
+  /** Customer.io rejects a send whose attachments exceed 2MB once encoded. */
+  const MAX_ATTACHMENTS_BYTES = 2097152;
+
+  /**
+   * Send a transactional email.
+   *
+   * $options carries anything beyond the template and its merge data:
+   *
+   *   attachments  ['invoice.pdf' => '/path/to/file.pdf']            a readable path
+   *                ['invoice.pdf' => ['content' => $rawBytes]]       bytes you already have
+   *                ['invoice.pdf' => ['base64' => $encoded]]         pre-encoded
+   *   body         HTML body, overriding the template's
+   *   body_plain   text alternative
+   *   subject, from, reply_to, bcc, preheader, headers, language
+   *   tracked, send_to_unsubscribed, disable_message_retention, queue_draft
+   *   identifiers  defaults to ['email' => $to]
+   *
+   * A transactional message id is still the normal path: it carries the
+   * layout, the sending domain and the reporting. Passing none is allowed, but
+   * then Customer.io has nothing to render, so subject, from and body are
+   * required and the call fails early rather than at the API.
+   */
+  function sendTransactionalEmail($to, $transactionalMessageId, $messageData = [], $options = []) {
+    if (!$this->enabled) {
       return false;
     }
 
+    $adHoc = empty($transactionalMessageId);
+
+    if ($adHoc) {
+      foreach (['subject', 'from', 'body'] as $required) {
+        if (empty($options[$required])) {
+          do_action('customerio/log', 'error',
+            "sendTransactionalEmail: without a transactional_message_id, '$required' is required", []);
+          return false;
+        }
+      }
+    }
+
     $data = [
-      'transactional_message_id' => is_numeric($transactionalMessageId) ? (int) $transactionalMessageId : $transactionalMessageId,
       'to' => $to,
-      'identifiers' => ['email' => $to],
+      'identifiers' => $options['identifiers'] ?? ['email' => $to],
       'message_data' => $messageData
     ];
+
+    if (!$adHoc) {
+      $data['transactional_message_id'] = is_numeric($transactionalMessageId)
+        ? (int) $transactionalMessageId
+        : $transactionalMessageId;
+    }
+
+    // Straight passthrough: these are Customer.io's own field names, so the
+    // caller reads their documentation rather than ours.
+    foreach (['body', 'body_plain', 'body_amp', 'subject', 'from', 'reply_to', 'bcc',
+      'preheader', 'headers', 'language', 'tracked', 'send_to_unsubscribed',
+      'disable_message_retention', 'queue_draft'] as $field) {
+      if (isset($options[$field]) && $options[$field] !== '') {
+        $data[$field] = $options[$field];
+      }
+    }
+
+    if (!empty($options['attachments'])) {
+      $attachments = $this->encodeAttachments($options['attachments']);
+      if ($attachments === false) {
+        return false; // already logged, with the reason
+      }
+      $data['attachments'] = $attachments;
+    }
 
     $url = $this->addRegion(self::CUSTOMERIO_API_URL) . '/send/email';
 
     return $this->sendRequest($url, $data, 'POST');
+  }
+
+  /**
+   * Send an HTML email without a Customer.io template.
+   *
+   * The convenience wrapper for "just send this HTML, with these files".
+   * Everything still goes through the transactional endpoint, so it is
+   * delivered, tracked and reported like any other transactional message.
+   */
+  function sendHtmlEmail($to, $subject, $html, $options = []) {
+    return $this->sendTransactionalEmail($to, null, $options['message_data'] ?? [], array_merge($options, [
+      'subject' => $subject,
+      'body' => $html,
+      'from' => $options['from'] ?? get_option('customerio_default_from', get_option('admin_email'))
+    ]));
+  }
+
+  /**
+   * filename => base64, which is the only shape the API accepts.
+   *
+   * Encoding inflates a file by about a third, and the 2MB ceiling applies to
+   * the encoded size, so the check happens after encoding — measuring the file
+   * on disk would let a 1.6MB PDF through and fail at the API.
+   */
+  private function encodeAttachments($attachments) {
+    $encoded = [];
+    $total = 0;
+
+    foreach ((array) $attachments as $filename => $source) {
+      $base64 = null;
+
+      if (is_array($source)) {
+        if (isset($source['base64'])) {
+          $base64 = $source['base64'];
+        } elseif (isset($source['content'])) {
+          $base64 = base64_encode($source['content']);
+        }
+      } elseif (is_string($source) && is_readable($source) && is_file($source)) {
+        $contents = file_get_contents($source);
+        $base64 = $contents === false ? null : base64_encode($contents);
+      }
+
+      if ($base64 === null) {
+        do_action('customerio/log', 'error',
+          "sendTransactionalEmail: attachment '$filename' could not be read", ['source' => is_string($source) ? $source : gettype($source)]);
+        return false;
+      }
+
+      $total += strlen($base64);
+      $encoded[$filename] = $base64;
+    }
+
+    if ($total > self::MAX_ATTACHMENTS_BYTES) {
+      do_action('customerio/log', 'error', sprintf(
+        'sendTransactionalEmail: attachments total %s encoded, over the %s Customer.io accepts',
+        size_format($total), size_format(self::MAX_ATTACHMENTS_BYTES)
+      ), ['bytes' => $total]);
+      return false;
+    }
+
+    return $encoded;
   }
 
   function sendEvent($event, $email, $data) {
