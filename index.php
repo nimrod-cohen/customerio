@@ -6,7 +6,7 @@
  * Plugin Name:       CustomerIO integration
  * Plugin URI:        https://github.com/nimrod-cohen/customerio
  * Description:       Integrate Wordpress with Customer IO
- * Version:           3.2.0
+ * Version:           3.2.1
  * Author:            nimrod-cohen
  * Author URI:        https://github.com/nimrod-cohen/customerio
  * License:           GPL-2.0+
@@ -52,7 +52,9 @@ class CustomerIOAdmin {
     $date = date("Y-m-d");
     $datetime = date("Y-m-d H:i:s");
     file_put_contents(
-      ABSPATH . DIRECTORY_SEPARATOR . "logs" . DIRECTORY_SEPARATOR . "debug-$date.log",
+      // SITE_LOGS_DIR (wp-config.php) keeps logs out of the web root; without it,
+      // or when it cannot be written, they stay in the site's own logs folder.
+      (defined('SITE_LOGS_DIR') && is_writable(SITE_LOGS_DIR) ? SITE_LOGS_DIR : ABSPATH . DIRECTORY_SEPARATOR . "logs") . DIRECTORY_SEPARATOR . "debug-$date.log",
       "$datetime | $msg\r\n",
       FILE_APPEND);
   }
